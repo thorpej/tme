@@ -1,3 +1,8 @@
+Sun Jan 21 20:04:45 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* libtme/misc.c (tme_misc_cycles_per_ms): Remove trailing
+	garbage in an #ifdef.
+
 Sun Jan 21 19:58:50 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* libtme/memory-auto.sh: Explicitly include required headers.
