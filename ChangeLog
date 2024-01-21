@@ -1,3 +1,11 @@
+Sun Jan 21 20:06:59 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* libtme/module.c (lt_preloaded_symbols): Comment out
+	the #undef of lt_preloaded_symbols.  This change is not
+	documented well, and needs to be revisited.
+	(tme_module_open): Ensure printf formats are const strings.
+	(tme_module_close): Explicitly consume the rc variable.
+
 Sun Jan 21 20:04:45 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* libtme/misc.c (tme_misc_cycles_per_ms): Remove trailing
