@@ -1,3 +1,13 @@
+Sun Jan 21 20:30:46 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* tmesh/Makefile.am (tmesh_CPPFLAGS): Define and set
+	LTDL_LIBRARY_PATH_DEFAULT to '"@prefix@/lib"'.
+	* tmesh/Makefile.in (CPPFLAGS): Add LTDL_LIBRARY_PATH_DEFAULT
+	to this variable for now.  This will be revisited by doing
+	a proper regeneration of all build files in a future commit.
+	* tmesh/tmesh.c (main): Use LTDL_LIBRARY_PATH_DEFAULT if the
+	"LTDL_LIBRARY_PATH" environment variable is not set.
+
 Sun Jan 21 20:18:40 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun4/sun4-timer.c (TME_SUN44C_TIMER_MASK):

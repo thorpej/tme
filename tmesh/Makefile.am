@@ -15,5 +15,6 @@ libtmesh_la_LDFLAGS = -version-info 0:0:0
 libtmesh_la_LIBADD = $(top_builddir)/libtme/libtme.la
 
 bin_PROGRAMS = tmesh
+tmesh_CPPFLAGS = -DLTDL_LIBRARY_PATH_DEFAULT='"@prefix@/lib"'
 tmesh_LDADD = libtmesh.la $(GTK_LIBS)
 tmesh_LDFLAGS = -dlpreopen self @TME_PREOPEN@
