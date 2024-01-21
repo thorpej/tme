@@ -1,3 +1,9 @@
+Sun Jan 21 17:58:11 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* host/posix/posix-serial.c: If the device filename is just "pty"
+	allocate one dynamically using the posix functions to avoid bsd'isms
+	(openpty).
+
 Sun Jan 21 17:49:24 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* host/gtk/gtk-screen.c (_tme_gtk_screen_mode_change): Also
