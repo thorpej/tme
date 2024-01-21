@@ -565,7 +565,7 @@ else
 
     # get the host recode parts:
     case "${target}" in
-    i[3456789]86-*-netbsd* | x86_64-*-netbsd* | i[3456789]86-*-linux*)
+    i[3456789]86-*-netbsd* | i[3456789]86-*-linux*)
 	recode_hosts="mmap x86"
 	;;
     *) recode_hosts= ;;
@@ -599,7 +599,7 @@ i[3456789]86-* | x86_64-*) misc_hosts="x86" ;;
 esac
 changequote([, ])dnl
 AC_MSG_RESULT([${misc_hosts}])
-if test "x${misc_hosts}" = no; then
+if test "x${misc_hosts}" = xno; then
     misc_hosts=
 fi
 
