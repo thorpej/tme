@@ -7,11 +7,12 @@ Sun Jan 21 18:35:04 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 Sun Jan 21 18:33:40 2024  Jason Thorpe  <thorpej@netbsd.org>
 
-	* Fix sequencing for tas (avoid diag assert).
+	* ic/m68k/m68k-insns.c: Fix sequencing for tas (avoid diag assert).
 
 Sun Jan 21 18:32:23 2024  Jason Thorpe  <thorpej@netbsd.org>
 
-	* Fix sequencing for cas32 (avoid a diag assert).
+	* ic/m68k/m68k-insns-auto.sh: Fix sequencing for cas32 (avoid
+	a diag assert).
 
 Sun Jan 21 18:14:40 2024  Jason Thorpe  <thorpej@netbsd.org>
 
