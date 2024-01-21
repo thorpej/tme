@@ -1441,6 +1441,9 @@ tme_m68k_rmw_start(struct tme_m68k *ic,
   tme_uint32_t *buffer_reg;
   int supported;
 
+  /* this instruction can fault: */
+  TME_M68K_INSN_CANFAULT;
+
   /* if the user reran the cycle: */
   if (TME_M68K_SEQUENCE_RESTARTING
       && (ic->_tme_m68k_group0_buffer_read_softrr > 0
@@ -1690,7 +1693,7 @@ tme_m68k_rmw_start(struct tme_m68k *ic,
       tlb = rmw->tme_m68k_rmw_tlbs[address_i];
 
       /* if this TLB entry doesn't cover the entire operand: */
-      if ((((tme_bus_addr32_t) tlb->tme_m68k_tlb_linear_last) - address) < rmw->tme_m68k_rmw_size) {
+      if ((((tme_bus_addr32_t) tlb->tme_m68k_tlb_linear_last + 1) - address) < rmw->tme_m68k_rmw_size) {
 
 	/* we can't support this instruction on this memory, because
 	   we can't split an atomic operation across TLB entries.  on
@@ -1753,9 +1756,6 @@ tme_m68k_rmw_start(struct tme_m68k *ic,
 	  tme_m68k_tlb_unbusy(tlbs_all[tlb_i]);
 	  tlbs_busy[!tlb_i] = FALSE;
 	}
-
-	/* this instruction can fault: */
-	TME_M68K_INSN_CANFAULT;
 
 	/* do a slow read.  if this is the first address, we start a
 	   slow read-modify-write cycle, otherwise we do a normal slow
@@ -1869,6 +1869,9 @@ tme_m68k_rmw_start(struct tme_m68k *ic,
 
       /* byteswap the value read: */
       *buffer_reg = tme_betoh_u32(*buffer_reg);
+
+      /* step the transfer count: */
+      TME_M68K_SEQUENCE_TRANSFER_STEP;
     
     } while (++address_i < rmw->tme_m68k_rmw_address_count);
   }
@@ -1990,6 +1993,9 @@ tme_m68k_rmw_finish(struct tme_m68k *ic,
 	      + (sizeof(ic->tme_m68k_ireg_memx32)
 		 - rmw->tme_m68k_rmw_size)),
 	     rmw->tme_m68k_rmw_size);
+
+      /* step the transfer count: */
+      TME_M68K_SEQUENCE_TRANSFER_STEP;
     }
 
   } while (++address_i < rmw->tme_m68k_rmw_address_count);
