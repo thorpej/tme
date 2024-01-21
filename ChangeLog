@@ -1,3 +1,11 @@
+Sun Jan 21 20:18:40 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* machine/sun4/sun4-timer.c (TME_SUN44C_TIMER_MASK):
+	(TME_SUN4M_TIMER_MASK):
+	* tme/common.h (_TME_FIELD_MASK_FACTOR):
+	* tme/generic/float.h (tme_float_value_ieee754_exponent_single): Avoid
+	left-shifting negative values.
+
 Sun Jan 21 20:13:32 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun2/sun2-mainbus.c (tme_machine_sun2):
