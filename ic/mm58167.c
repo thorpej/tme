@@ -219,7 +219,8 @@ _tme_mm58167_bus_cycle(void *_mm58167, struct tme_bus_cycle *cycle_init)
       mm58167->tme_mm58167_status = 0;
       break;
     default:
-      abort();
+      value = 0;
+      break;
     }
 
     /* if needed, convert this value to BCD: */

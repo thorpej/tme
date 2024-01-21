@@ -1,3 +1,9 @@
+Sun Jan 21 18:43:07 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* ic/mm58167.c (_tme_mm58167_bus_cycle): Don't abort the emulator
+	if we get a read for an unexpected register (which seems to happen
+	with NetBSD 9 on sun2); just return 0 instead.
+
 Sun Jan 21 18:35:04 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* ic/m68k/m68k-misc.c (tme_m68k_rmw_start): Fix sequencing and
