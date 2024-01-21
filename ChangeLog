@@ -1,3 +1,8 @@
+Sun Jan 21 18:14:40 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* ic/m68k/m6888x.c (tme_m68k_fmovemctl): Fix emulation of
+	fmovel #IMM, %fpcr.
+
 Sun Jan 21 18:13:04 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* Suppress undefined macro warnings by cpp in newer gcc 4.5.3
