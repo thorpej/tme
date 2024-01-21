@@ -82,7 +82,12 @@ tme_recode_host_thunks_alloc(struct tme_recode_ic *ic,
 	    size_run,
 	    (PROT_READ
 	     | PROT_WRITE
-	     | PROT_EXEC),
+#ifdef PROT_MPROTECT
+	     | PROT_MPROTECT(PROT_EXEC)
+#else
+	     | PROT_EXEC
+#endif /* PROT_MPROTECT */
+	     ),
 	    (MAP_SHARED
 #ifdef MAP_ANON
 	     | MAP_ANON
