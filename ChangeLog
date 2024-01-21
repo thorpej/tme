@@ -1,3 +1,8 @@
+Sun Jan 21 20:35:43 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* machine/sun/sun-bwtwo.c (tme_sun_bwtwo): Avoid a compiler bug
+	(phantom integer oveflow) in gcc 4.5.3.
+
 Sun Jan 21 20:30:46 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* tmesh/Makefile.am (tmesh_CPPFLAGS): Define and set
