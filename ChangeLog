@@ -1,3 +1,7 @@
+Sun Jan 21 18:32:23 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* Fix sequencing for cas32 (avoid a diag assert).
+
 Sun Jan 21 18:14:40 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* ic/m68k/m6888x.c (tme_m68k_fmovemctl): Fix emulation of
