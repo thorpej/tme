@@ -1,3 +1,8 @@
+Sun Jan 21 18:13:04 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* Suppress undefined macro warnings by cpp in newer gcc 4.5.3
+	on NetBSD/arm.
+
 Sun Jan 21 17:58:11 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* host/posix/posix-serial.c: If the device filename is just "pty"
