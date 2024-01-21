@@ -1,3 +1,9 @@
+Sun Jan 21 17:49:24 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* host/gtk/gtk-screen.c (_tme_gtk_screen_mode_change): Also
+	check screen width and height to choose default screen size
+	for modern HD and multi display environments.
+
 Sun Jan 21 17:39:00 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* host/bsd/bsd-if.c: Handle the new (post-2007) way SIOCGIFCONF
