@@ -1,3 +1,7 @@
+Sun Jan 21 18:46:12 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* ic/sparc/sparc-execute.c: Appease a GCC uninitialized warning.
+
 Sun Jan 21 18:43:07 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* ic/mm58167.c (_tme_mm58167_bus_cycle): Don't abort the emulator
