@@ -1,3 +1,11 @@
+Sun Jan 21 20:43:39 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* machine/sun2/SUN2-MULTIBUS:
+	* machine/sun3/SUN3-CARRERA:
+	* machine/sun4/SUN4-75:
+	* machine/sun4u/SUN-ULTRA-1: Add tap device example.  Use dynamically
+	allocated PTY.
+
 Sun Jan 21 20:40:26 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* host/bsd/bsd-tap.c: New file.
