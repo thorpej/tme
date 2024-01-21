@@ -1,3 +1,10 @@
+Sun Jan 21 20:40:26 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* host/bsd/bsd-tap.c: New file.
+	* host/bsd/Makefile.am (tme_host_bsd_la_SOURCES): Add bsd-tap.c.
+	* host/bsd/Makefile.in (am_tme_host_bsd_la_OBJECTS): Add bsd-tap.lo.
+	(tme_host_bsd_la_SOURCES): Add bsd-tap.c.
+
 Sun Jan 21 20:37:20 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* tmesh/tmesh-input.y (yyerror): Ensure printf formats are const
