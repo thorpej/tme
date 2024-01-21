@@ -1,3 +1,9 @@
+Sun Jan 21 20:37:20 2024  Jason Thorpe  <thorpej@netbsd.org>
+
+	* tmesh/tmesh-input.y (yyerror): Ensure printf formats are const
+	strings.
+	(yylex): Avoid a crash on EOF.
+
 Sun Jan 21 20:35:43 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun/sun-bwtwo.c (tme_sun_bwtwo): Avoid a compiler bug
