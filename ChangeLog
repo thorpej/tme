@@ -1,3 +1,11 @@
+Sun Jan 25 09:59:44 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* libltdl/compile: added.
+	* libltdl/aclocal.m4: Regen using aclocal (GNU automake) 1.18.
+	* libltdl/configure.ac: Update for new-style AM_INIT_AUTOMAKE
+	invocation.
+	* libltdl/Makefile.in: Regenerate using automake (GNU automake) 1.18.
+
 Sun Jan 25 09:25:10 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* configure.in: Renamed to configure.ac.
