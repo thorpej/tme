@@ -18,13 +18,13 @@
 
 
 dnl FIXME: Is this really new enough?
-AC_PREREQ(2.50)
+AC_PREREQ([2.72])
 
 
 ## ------------------------ ##
 ## Autoconf initialisation. ##
 ## ------------------------ ##
-AC_INIT([libltdl], [1.2], [bug-libtool@gnu.org])
+AC_INIT([libltdl],[1.2],[bug-libtool@gnu.org])
 AC_CONFIG_SRCDIR([ltdl.c])
 
 
@@ -50,7 +50,7 @@ fi
 ## ------------------------ ##
 ## Automake Initialisation. ##
 ## ------------------------ ##
-AC_INIT(AC_PACKAGE_TARNAME, AC_PACKAGE_VERSION)
+AC_INIT([AC_PACKAGE_TARNAME],[AC_PACKAGE_VERSION])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([config.h:config-h.in])
 

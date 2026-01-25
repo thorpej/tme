@@ -1,3 +1,8 @@
+Sun Jan 25 10:04:55 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* libltld/configure.ac: Process with autoupdate (GNU Autoconf) 2.72.
+	* libltld/configure: Regen using autoconf (GNU Autoconf) 2.72.
+
 Sun Jan 25 09:59:44 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* libltdl/compile: added.
