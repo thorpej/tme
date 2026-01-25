@@ -1,3 +1,25 @@
+Sun Jan 25 09:25:10 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* bus/multibus/Makefile.am:
+	* bus/sbus/Makefile.am:
+	* generic/Makefile.am:
+	* host/bsd/Makefile.am:
+	* host/gtk/Makefile.am:
+	* host/posix/Makefile.am:
+	* ic/Makefile.am:
+	* ic/ieee754/Makefile.am:
+	* ic/m68k/Makefile.am:
+	* ic/sparc/Makefile.am:
+	* ic/stp22xx/Makefile.am:
+	* libtme/Makefile.am:
+	* machine/sun/Makefile.am:
+	* machine/sun2/Makefile.am:
+	* machine/sun3/Makefile.am:
+	* machine/sun4/Makefile.am:
+	* scsi/Makefile.am:
+	* serial/Makefile.am:
+	* tmesh/Makefile.am: Rename INCLUDES to AM_CPPFLAGS.
+
 Sun Jan 21 20:43:39 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun2/SUN2-MULTIBUS:
