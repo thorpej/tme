@@ -396,7 +396,7 @@ AC_SUBST(TME_FB_XLAT_DST)
 dnl Configures for the system(s) to emulate.
 systems=all
 if echo " ${systems} " | grep ' all ' > /dev/null 2>&1; then
-  systems="sun2 sun3 sun4"
+  systems="phaethon1 sun2 sun3 sun4"
   if test $ac_cv_sizeof_long = 8 || test "x${GCC}" = "xyes"; then
     systems="${systems} sunultra1"
   fi
@@ -415,6 +415,14 @@ for system in $systems; do
     # dispatch on the machine type to get more machines, ICs, and
     # buses to compile:
     case ${system} in
+
+    # the phaethon1:
+    phaethon1)
+    	machines="pg68k phaethon1"
+	ics="m68k"
+	bus_size=32
+	recode_size_guest=0
+	;;
 
     # the sun2:
     sun2)
@@ -904,6 +912,8 @@ AC_CONFIG_FILES([Makefile
 	  ic/sparc/Makefile
 	  ic/stp22xx/Makefile
 	  machine/Makefile
+	  machine/pg68k/Makefile
+	  machine/phaethon1/Makefile
 	  machine/sun/Makefile
 	  machine/sun2/Makefile
 	  machine/sun3/Makefile

@@ -4,4 +4,4 @@
 AUTOMAKE_OPTIONS = 1.4 gnu
 
 tmemaincludedir = $(pkgincludedir)/machine
-tmemainclude_HEADERS = sun.h
+tmemainclude_HEADERS = pg68k.h sun.h
