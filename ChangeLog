@@ -24,6 +24,10 @@ Sun Jan 25 09:14:12 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* Makefile.am: Rename pkglib_DATA to pkgdata_DATA.
 
+Sun Jan 25 09:13:30 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* compile: Added.
+
 Sun Jan 21 20:43:39 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun2/SUN2-MULTIBUS:
