@@ -1,4 +1,4 @@
-/* machine/phaethon1/phaethon1-contorl.c - implementation of
+/* machine/phaethon1/phaethon1-control.c - implementation of
    Phaethon 1 control space emulation:  */
 
 /*
