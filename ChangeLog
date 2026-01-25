@@ -19,6 +19,40 @@ Sun Jan 25 09:25:10 2026  Jason Thorpe  <thorpej@netbsd.org>
 	* scsi/Makefile.am:
 	* serial/Makefile.am:
 	* tmesh/Makefile.am: Rename INCLUDES to AM_CPPFLAGS.
+	* Makefile.in:
+	* bus/Makefile.in:
+	* bus/multibus/Makefile.in:
+	* bus/sbus/Makefile.in:
+	* generic/Makefile.in:
+	* host/Makefile.in:
+	* host/bsd/Makefile.in:
+	* host/gtk/Makefile.in:
+	* host/posix/Makefile.in:
+	* ic/Makefile.in:
+	* ic/ieee754/Makefile.in:
+	* ic/m68k/Makefile.in:
+	* ic/sparc/Makefile.in:
+	* ic/stp22xx/Makefile.in:
+	* libtme/Makefile.in:
+	* libtme/host/Makefile.in:
+	* libtme/host/x86/Makefile.in:
+	* machine/Makefile.in:
+	* machine/sun/Makefile.in:
+	* machine/sun2/Makefile.in:
+	* machine/sun3/Makefile.in:
+	* machine/sun4/Makefile.in:
+	* machine/sun4u/Makefile.in:
+	* scsi/Makefile.in:
+	* serial/Makefile.in:
+	* tme/Makefile.in:
+	* tme/bus/Makefile.in:
+	* tme/generic/Makefile.in:
+	* tme/host/Makefile.in:
+	* tme/ic/Makefile.in:
+	* tme/machine/Makefile.in:
+	* tme/scsi/Makefile.in:
+	* tmesh/Makefile.in:
+	* tools/Makefile.in: Regenerate using automake (GNU automake) 1.18.
 
 Sun Jan 25 09:14:12 2026  Jason Thorpe  <thorpej@netbsd.org>
 
