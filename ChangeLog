@@ -32,6 +32,10 @@ Sun Jan 25 09:03:11 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* Makefile.am: Update for new-style AM_INIT_AUTOMAKE invocation.
 
+Sun Jan 25 09:01:56 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* aclocal.m4: Regen using aclocal (GNU automake) 1.18.
+
 Sun Jan 21 20:43:39 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun2/SUN2-MULTIBUS:
