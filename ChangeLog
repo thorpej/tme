@@ -1,3 +1,8 @@
+Sun Jan 25 10:16:31 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* generic/float.c (_tme_float_sigfpe_handler): Stop using
+	RETSIGTYPE; always return void.
+
 Sun Jan 25 10:04:55 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* libltld/configure.ac: Process with autoupdate (GNU Autoconf) 2.72.
