@@ -28,6 +28,10 @@ Sun Jan 25 09:13:30 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* compile: Added.
 
+Sun Jan 25 09:03:11 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* Makefile.am: Update for new-style AM_INIT_AUTOMAKE invocation.
+
 Sun Jan 21 20:43:39 2024  Jason Thorpe  <thorpej@netbsd.org>
 
 	* machine/sun2/SUN2-MULTIBUS:
