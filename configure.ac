@@ -663,6 +663,10 @@ AC_ARG_ENABLE(warnings,
 [ ], [enable_warnings=yes])
 if test "x$enable_warnings" = "xyes" -a "x$GCC" = "xyes"; then
   CFLAGS="${CFLAGS-} -Wundef -Wall -Werror"
+  # Some warnings are a little too intrusive.
+  CFLAGS="${CFLAGS} -Wno-error=unused-but-set-variable"
+  # XXX tme_stp22xx_conns
+  CFLAGS="${CFLAGS} -Wno-error=array-bounds"
   CXXFLAGS="${CXXFLAGS-} -W"
 fi
 

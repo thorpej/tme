@@ -1,3 +1,13 @@
+Mon Jan 26 10:33:49 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* configure.ac: Add -Wno-error=unused-but-set-variable and
+	-Wno-error=array-bounds to CFLAGS.
+	* configure: Regenerate using autoconf (GNU Autoconf) 2.72.
+	* ic/am9513.c (_tme_am9513_bus_cycle): Initialize 'buffer'
+	to avoid a possible used-before-initialized problem with
+	an indirect access of that variable.
+	* tmesh/tmesh.c: Include <stdlib.h>.
+
 Mon Jan 26 10:28:42 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* configure.ac (LT_SYS_MODULE_PATH): Add.
