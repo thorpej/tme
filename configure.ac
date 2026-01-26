@@ -32,13 +32,15 @@ dnl ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 dnl POSSIBILITY OF SUCH DAMAGE.
 
 dnl Checks that we are given a good source directory.
-AC_INIT(tme, 0.8)
+AC_INIT([tme],[0.8])
 AC_CONFIG_SRCDIR(ic/m68k/m68k-impl.h)
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 
+AC_CONFIG_MACRO_DIRS([libltdl/m4])
+
 dnl Write configuration out to config.h through config.h.in.
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS(config.h)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -48,7 +50,9 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
 dnl Checks for header files.
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS(unistd.h stdio.h memory.h stdarg.h limits.h float.h)
 AC_CHECK_HEADERS(sys/ioctl.h sys/sockio.h sys/socketio.h net/if_dl.h ioctls.h)
 AC_CHECK_HEADERS(sys/bswap.h)
@@ -58,9 +62,20 @@ AC_C_BIGENDIAN
 AC_C_CONST
 AC_C_INLINE
 AC_C_VOLATILE
-AC_C_LONG_DOUBLE
+m4_warn([obsolete],
+[The macro 'AC_C_LONG_DOUBLE' is obsolete.
+You should use 'AC_TYPE_LONG_DOUBLE' or 'AC_TYPE_LONG_DOUBLE_WIDER' instead.
+])dnl
+
+    AC_TYPE_LONG_DOUBLE_WIDER
+    ac_cv_c_long_double=$ac_cv_type_long_double_wider
+    if test $ac_cv_c_long_double = yes; then
+      AC_DEFINE([HAVE_LONG_DOUBLE],[1],[Define to 1 if the type 'long double' works and has more range or
+	 precision than 'double'.])
+    fi
+  
 AC_TYPE_SIZE_T
-AC_TYPE_SIGNAL
+
 AC_CHECK_SIZEOF(long, 4)
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(short, 2)
@@ -96,10 +111,23 @@ if test $ac_cv_c_long_double = yes; then
   AC_CHECK_FLOAT_FORMAT(long double)
   AC_CHECK_FLOAT_LIMITS(long double, LDBL_MAX/LDBL_MIN)
 fi
-AC_SYS_SOCKADDR_SA_LEN
+
+# Check for struct sockaddr::sa_len.
+#
+AC_MSG_CHECKING(for sa_len member in struct sockaddr)
+AC_COMPILE_IFELSE([
+	AC_LANG_PROGRAM([[
+		#include <sys/socket.h>
+	]],[[
+		struct sockaddr dummy;
+		dummy.sa_len = 0;
+	]])],[
+		AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1, [Define if the struct sockaddr has a member sa_len on your OS])
+		AC_MSG_RESULT(yes)],[
+		AC_MSG_RESULT(no)])
 
 dnl Checks for library functions and prototypes.
-AC_PROG_GCC_TRADITIONAL
+AC_PROG_CC
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_CHECK_FUNC_LONG(bswap16, [
@@ -605,13 +633,14 @@ if test "x${misc_hosts}" = xno; then
 fi
 
 dnl Configure for libtool.
-AC_LIBLTDL_INSTALLABLE
 AC_SUBST(INCLTDL)
 AC_SUBST(LIBLTDL)
-AC_LIBTOOL_DLOPEN
-AM_PROG_LIBTOOL
+
+LT_CONFIG_LTDL_DIR([libltdl])
+LT_INIT([dlopen])
+LTDL_INIT
 AC_SUBST(LTLIBOBJS)
-AC_CONFIG_SUBDIRS(libltdl)
+dnl AC_CONFIG_SUBDIRS(libltdl)
 TME_PREOPEN=
 if test $enable_shared = no; then
   TME_PREOPEN='`sort -u $(top_builddir)/tme-preopen.txt`'
@@ -646,7 +675,7 @@ AC_SUBST(CFLAGS_NO_STRICT_ALIASING)
 dnl Generate tmeconfig.h.  The whether-to-generate logic is cribbed 
 dnl from glib-1.2.1's configure.in.
 dnl See that file for an explanation.
-AC_OUTPUT_COMMANDS([
+AC_CONFIG_COMMANDS([default-1],[[
           
 ## Generate our configure-time sources in two 
 ## cases:
@@ -670,6 +699,18 @@ if test -n "${CONFIG_FILES}" && test -n "${CONFIG_HEADERS}"; then
   fi
 fi
 
+tmeconfig_h_xform_config_h='
+/^#define[ \t](HAVE_|TIME_|PROTO_|ALIGNOF_|SIZEOF_)/ {
+  printf("#define _TME_%s %s\n", @S|@2, @S|@3);
+}
+'
+
+tmeconfig_h_xform_float_format='
+/^#define[ \t]FLOAT_FORMAT_/ {
+  printf("#define TME_%s TME_FLOAT_FORMAT_%s\n", @S|@2, @S|@3);
+}
+'
+
 ## If we're generating tmeconfig.h:
 if test "x$gen_tmeconfig_h" = xyes; then
   outfile=tmeconfig.h
@@ -677,18 +718,33 @@ if test "x$gen_tmeconfig_h" = xyes; then
   cat <<TMEEOF > ${outfile}-tmp
 /* tmeconfig.h
  * 
- * This is an automatically generated file - please modify 'configure.in'.
+ * This is an automatically generated file - please modify 'configure.ac'.
  */
 
 #ifndef _TMECONFIG_H
 #define _TMECONFIG_H
 
 TMEEOF
-  (for word in HAVE_ TIME_ PROTO_ ALIGNOF_ SIZEOF_ WORDS_BIGENDIAN; do \
-    grep $word config.h | sed 's/#define[ 	]\{1,\}/&_TME_/' ; \
-  done) | sort | uniq >> ${outfile}-tmp
-  grep FLOAT_FORMAT config.h | \
-    sed 's/#define[ 	]\{1,\}\([A-Za-z0-9_]\{1,\}\)[ 	]\{1,\}\([A-Za-z0-9_]\{1,\}\)/#define TME_\1 TME_FLOAT_FORMAT_\2/' >> ${outfile}-tmp
+#  (for word in HAVE_ TIME_ PROTO_ ALIGNOF_ SIZEOF_ WORDS_BIGENDIAN; do \
+#    grep $word config.h | \ sed 's/#define[ 	]\{1,\}/&_TME_/' ; \
+#  done) | sort | uniq >> ${outfile}-tmp
+#  grep FLOAT_FORMAT config.h | \
+#    sed 's/#define[ 	]\{1,\}\([A-Za-z0-9_]\{1,\}\)[ 	]\{1,\}\([A-Za-z0-9_]\{1,\}\)/#define TME_\1 TME_FLOAT_FORMAT_\2/' >> ${outfile}-tmp
+  awk "$tmeconfig_h_xform_config_h" config.h | sort | uniq >> ${outfile}-tmp
+  awk "$tmeconfig_h_xform_float_format" config.h >> ${outfile}-tmp
+  case $ac_cv_c_bigendian in #(
+    yes)
+      echo "#define _TME_WORDS_BIGENDIAN 1" >> ${outfile}-tmp
+      ;; #(
+    universal)
+      echo "#define _TME_AC_APPLE_UNIVERSAL_BUILD 1" >> ${outfile}-tmp
+      echo "#ifdef __BIG_ENDIAN__" >> ${outfile}-tmp
+      echo "#define _TME_WORDS_BIGENDIAN 1" >> ${outfile}-tmp
+      echo "#endif /* __BIG_ENDIAN__ */" >> ${outfile}-tmp
+      ;; #(
+    *)
+      ;;
+    esac
   echo '#define TME_BUSMAX_LOG2 TME_BUS'${bus_size_max}'_LOG2' >> ${outfile}-tmp
   echo '#define TME_HAVE_RECODE (' \
     `if test "x${recode_hosts}" = x; then echo 0; else echo 1; fi` ')' >> ${outfile}-tmp
@@ -741,7 +797,7 @@ TMEEOF
   cat <<TMEEOF > ${outfile}-tmp
 /* recode-host.h
  * 
- * This is an automatically generated file - please modify 'configure.in'.
+ * This is an automatically generated file - please modify 'configure.ac'.
  */
 
 TMEEOF
@@ -767,7 +823,7 @@ TMEEOF
   cat <<TMEEOF > ${outfile}-tmp
 /* recode-host.c
  * 
- * This is an automatically generated file - please modify 'configure.in'.
+ * This is an automatically generated file - please modify 'configure.ac'.
  */
 
 TMEEOF
@@ -790,7 +846,7 @@ TMEEOF
   cat <<TMEEOF > ${outfile}-tmp
 /* misc-host.c
  * 
- * This is an automatically generated file - please modify 'configure.in'.
+ * This is an automatically generated file - please modify 'configure.ac'.
  */
 
 TMEEOF
@@ -810,7 +866,7 @@ TMEEOF
   fi
 
 fi
-], [
+]],[[
 recode_hosts="$recode_hosts"
 recode_size_guest_max="$recode_size_guest_max"
 misc_hosts="$misc_hosts"
@@ -822,10 +878,10 @@ ac_cv_sizeof_int="$ac_cv_sizeof_int"
 ac_cv_sizeof_long="$ac_cv_sizeof_long"
 ac_cv_sizeof_short="$ac_cv_sizeof_short"
 bus_size_max="$bus_size_max"
-])
+]])
 
 dnl Writes files.
-AC_OUTPUT(Makefile
+AC_CONFIG_FILES([Makefile
 	  tme/Makefile
 	  tme/ic/Makefile
 	  tme/machine/Makefile
@@ -858,5 +914,6 @@ AC_OUTPUT(Makefile
           scsi/Makefile
           generic/Makefile
 	  tmesh/Makefile
-	  tools/Makefile)
+	  tools/Makefile])
+AC_OUTPUT
 

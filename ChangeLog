@@ -1,3 +1,47 @@
+Mon Jan 26 07:51:32 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* Makefile.am (ACLOCAL_AMFLAGS): Define.
+	* acinclude.m4 (AC_HEADER_CHECK_PROTOTYPE,
+	AC_HEADER_CHECK_PROTOTYPES, AC_SYS_SOCKADDR_SA_LEN): Remove.
+	* libtme/misc-host.c: Remove.
+	* configure.ac: Update for autoconf (GNU Autoconf) 2.72.
+	* aclocal.m4: Regenerate using aclocal (GNU automake) 1.18.
+	* compile config.guess config.h.in config.sub configure
+	depcomp missing: Regenerate using libtool (GNU libtool) 2.4.6
+	and autoconf (GNU Autoconf) 2.72.
+	* libltdl/libltdl/lt__alloc.h libltdl/libltdl/lt__argz_.h
+	libltdl/libltdl/lt__dirent.h libltdl/libltdl/lt__glibc.h
+	libltdl/libltdl/lt__private.h libltdl/libltdl/lt__strl.h
+	libltdl/libltdl/lt_dlloader.h libltdl/libltdl/lt_error.h
+	libltdl/libltdl/lt_system.h libltdl/libltdl/slist.h
+	libltdl/loaders/dld_link.c libltdl/loaders/dlopen.c
+	libltdl/loaders/dyld.c libltdl/loaders/load_add_on.c
+	libltdl/loaders/loadlibrary.c libltdl/loaders/preopen.c
+	libltdl/loaders/shl_load.c libltdl/lt__alloc.c libltdl/lt__argz.c
+	libltdl/lt__dirent.c libltdl/lt__strl.c libltdl/lt_dlloader.c
+	libltdl/lt_error.c libltdl/m4/libtool.m4 libltdl/m4/ltargz.m4
+	libltdl/m4/ltdl.m4 libltdl/m4/ltoptions.m4 libltdl/m4/ltsugar.m4
+	libltdl/m4/ltversion.m4 libltdl/m4/lt~obsolete.m4 libltdl/slist.c:
+	Add via libtool (GNU libtool) 2.4.6.
+	* libltdl/COPYING.LIB libltdl/Makefile.am libltdl/Makefile.in
+	libltdl/README libltdl/aclocal.m4 libltdl/config-h.in
+	libltdl/configure libltdl/configure.ac libltdl/ltdl.c
+	libltdl/ltdl.h: Update via libtool (GNU libtool) 2.4.6.
+	* libltdl/acinclude.m4: Remove.
+	* bus/Makefile.in bus/multibus/Makefile.in bus/sbus/Makefile.in
+	generic/Makefile.in host/Makefile.in host/bsd/Makefile.in
+	host/gtk/Makefile.in host/posix/Makefile.in ic/Makefile.in
+	ic/ieee754/Makefile.in ic/m68k/Makefile.in ic/sparc/Makefile.in
+	ic/stp22xx/Makefile.in libtme/Makefile.in libtme/host/Makefile.in
+	libtme/host/x86/Makefile.in machine/Makefile.in machine/sun/Makefile.in
+	machine/sun2/Makefile.in machine/sun3/Makefile.in
+	machine/sun4/Makefile.in machine/sun4u/Makefile.in
+	scsi/Makefile.in serial/Makefile.in tme/Makefile.in
+	tme/bus/Makefile.in tme/generic/Makefile.in tme/host/Makefile.in
+	tme/ic/Makefile.in tme/machine/Makefile.in tme/scsi/Makefile.in
+	tmesh/Makefile.in tools/Makefile.in: Regenerate using
+	automake (GNU automake) 1.18.
+
 Sun Jan 25 10:16:31 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* generic/float.c (_tme_float_sigfpe_handler): Stop using
