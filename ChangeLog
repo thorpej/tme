@@ -1,3 +1,10 @@
+Mon Jan 26 10:28:42 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* configure.ac (LT_SYS_MODULE_PATH): Add.
+	* configure: Regenerate using autoconf (GNU Autoconf) 2.72.
+	* libtme/module.c (_tme_modules_find): Use LT_MODULE_PATH_VAR
+	instead of LTDL_SHLIBPATH_VAR.
+
 Mon Jan 26 10:13:26 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* tme/threads.h (tme_rwlock_init, tme_rwlock_rdlock,

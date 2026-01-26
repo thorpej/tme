@@ -20406,6 +20406,23 @@ eval "LTDLOPEN=\"$libname_spec\""
 # Only expand once:
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking what variable specifies run-time module search path" >&5
+printf %s "checking what variable specifies run-time module search path... " >&6; }
+if test ${lt_cv_module_path_var+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) lt_cv_module_path_var=$shlibpath_var ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_module_path_var" >&5
+printf "%s\n" "$lt_cv_module_path_var" >&6; }
+if test -n "$lt_cv_module_path_var"; then
+
+printf "%s\n" "#define LT_MODULE_PATH_VAR \"$lt_cv_module_path_var\"" >>confdefs.h
+
+fi
+
 
 TME_PREOPEN=
 if test $enable_shared = no; then
