@@ -1,3 +1,9 @@
+Mon Jan 26 10:13:26 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* tme/threads.h (tme_rwlock_init, tme_rwlock_rdlock,
+	tme_rwlock_tryrdlock, tme_rwlock_unlock): Define as
+	inline functions, rather than macros.
+
 Mon Jan 26 07:51:32 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* Makefile.am (ACLOCAL_AMFLAGS): Define.
