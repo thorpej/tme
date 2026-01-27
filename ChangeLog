@@ -1,3 +1,9 @@
+Tue Jan 27 12:48:17 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* tme/generic/float.h (tme_float_is_inf): Use isinf()
+	in the TME_FLOAT_FORMAT_FLOAT case.
+	(tme_float_is_nan): Use isnan() in the TME_FLOAT_FORMAT_FLOAT case.
+
 Tue Jan 27 12:18:41 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* libtme/log-prf.c: Declare and use a static constant

@@ -350,7 +350,7 @@ tme_float_assert_formats(_tme_const struct tme_float *x, unsigned int formats)
        ? (tme_float_value_ieee754_exponent_quad(x) == 0x7fff \
 	  && tme_float_value_ieee754_fracor_quad(x) != 0) \
        : tme_float_is_format(x, formats, TME_FLOAT_FORMAT_FLOAT) \
-       ? isnanf((x)->tme_float_value_float) \
+       ? isnan((x)->tme_float_value_float) \
        : tme_float_is_format(x, formats, TME_FLOAT_FORMAT_DOUBLE) \
        ? isnan((x)->tme_float_value_double) \
        : TME_FLOAT_IF_LONG_DOUBLE(isnan((x)->tme_float_value_long_double) ||) FALSE))
@@ -371,7 +371,7 @@ tme_float_assert_formats(_tme_const struct tme_float *x, unsigned int formats)
        ? (tme_float_value_ieee754_exponent_quad(x) == 0x7fff \
 	  && tme_float_value_ieee754_fracor_quad(x) == 0) \
        : tme_float_is_format(x, formats, TME_FLOAT_FORMAT_FLOAT) \
-       ? isinff((x)->tme_float_value_float) \
+       ? isinf((x)->tme_float_value_float) \
        : tme_float_is_format(x, formats, TME_FLOAT_FORMAT_DOUBLE) \
        ? isinf((x)->tme_float_value_double) \
        : TME_FLOAT_IF_LONG_DOUBLE(isinf((x)->tme_float_value_long_double) ||) FALSE))
