@@ -418,7 +418,7 @@ for system in $systems; do
 
     # the phaethon1:
     phaethon1)
-    	machines="pg68k phaethon1"
+	machines="pg68k phaethon1"
 	ics="m68k"
 	bus_size=32
 	recode_size_guest=0

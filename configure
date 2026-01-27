@@ -11053,7 +11053,7 @@ fi
 
 systems=all
 if echo " ${systems} " | grep ' all ' > /dev/null 2>&1; then
-  systems="sun2 sun3 sun4"
+  systems="phaethon1 sun2 sun3 sun4"
   if test $ac_cv_sizeof_long = 8 || test "x${GCC}" = "xyes"; then
     systems="${systems} sunultra1"
   fi
@@ -11072,6 +11072,14 @@ for system in $systems; do
     # dispatch on the machine type to get more machines, ICs, and
     # buses to compile:
     case ${system} in
+
+    # the phaethon1:
+    phaethon1)
+	machines="pg68k phaethon1"
+	ics="m68k"
+	bus_size=32
+	recode_size_guest=0
+	;;
 
     # the sun2:
     sun2)
@@ -20520,7 +20528,7 @@ fi
 ac_config_commands="$ac_config_commands default-1"
 
 
-ac_config_files="$ac_config_files Makefile tme/Makefile tme/ic/Makefile tme/machine/Makefile tme/generic/Makefile tme/scsi/Makefile tme/host/Makefile tme/bus/Makefile libtme/Makefile libtme/host/Makefile libtme/host/x86/Makefile ic/Makefile ic/m68k/Makefile ic/ieee754/Makefile ic/sparc/Makefile ic/stp22xx/Makefile machine/Makefile machine/sun/Makefile machine/sun2/Makefile machine/sun3/Makefile machine/sun4/Makefile machine/sun4u/Makefile host/Makefile host/posix/Makefile host/bsd/Makefile host/gtk/Makefile bus/Makefile bus/multibus/Makefile bus/sbus/Makefile serial/Makefile scsi/Makefile generic/Makefile tmesh/Makefile tools/Makefile"
+ac_config_files="$ac_config_files Makefile tme/Makefile tme/ic/Makefile tme/machine/Makefile tme/generic/Makefile tme/scsi/Makefile tme/host/Makefile tme/bus/Makefile libtme/Makefile libtme/host/Makefile libtme/host/x86/Makefile ic/Makefile ic/m68k/Makefile ic/ieee754/Makefile ic/sparc/Makefile ic/stp22xx/Makefile machine/Makefile machine/pg68k/Makefile machine/phaethon1/Makefile machine/sun/Makefile machine/sun2/Makefile machine/sun3/Makefile machine/sun4/Makefile machine/sun4u/Makefile host/Makefile host/posix/Makefile host/bsd/Makefile host/gtk/Makefile bus/Makefile bus/multibus/Makefile bus/sbus/Makefile serial/Makefile scsi/Makefile generic/Makefile tmesh/Makefile tools/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -21604,6 +21612,8 @@ do
     "ic/sparc/Makefile") CONFIG_FILES="$CONFIG_FILES ic/sparc/Makefile" ;;
     "ic/stp22xx/Makefile") CONFIG_FILES="$CONFIG_FILES ic/stp22xx/Makefile" ;;
     "machine/Makefile") CONFIG_FILES="$CONFIG_FILES machine/Makefile" ;;
+    "machine/pg68k/Makefile") CONFIG_FILES="$CONFIG_FILES machine/pg68k/Makefile" ;;
+    "machine/phaethon1/Makefile") CONFIG_FILES="$CONFIG_FILES machine/phaethon1/Makefile" ;;
     "machine/sun/Makefile") CONFIG_FILES="$CONFIG_FILES machine/sun/Makefile" ;;
     "machine/sun2/Makefile") CONFIG_FILES="$CONFIG_FILES machine/sun2/Makefile" ;;
     "machine/sun3/Makefile") CONFIG_FILES="$CONFIG_FILES machine/sun3/Makefile" ;;
