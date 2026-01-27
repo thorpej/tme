@@ -5,7 +5,10 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 SUBDIRS = host
 
-INCLUDES = -I$(top_srcdir) -I$(srcdir) -I. $(INCLTDL) $(GTK_CFLAGS) -D_TME_IMPL
+AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. $(INCLTDL) $(GTK_CFLAGS) \
+              -D_TME_IMPL
+
+CLEANFILES = misc-host.c recode-host.c memory-auto.h memory-auto.c
 
 lib_LTLIBRARIES = libtme.la
 pkginclude_HEADERS = memory-auto.h
@@ -43,9 +46,3 @@ memory-auto.h: memory-auto.sh
 memory-auto.c: memory-auto.sh
 	$(SHELL) $(srcdir)/memory-auto.sh > $@
 memory-auto.lo: memory-auto.h
-
-# module.c needs to know the LTDL_SHLIBPATH_VAR that libltdl
-# is using:
-module.lo: shlibvar.h
-shlibvar.h: $(top_builddir)/libltdl/config.h
-	grep LTDL_SHLIBPATH_VAR $(top_builddir)/libltdl/config.h > $@

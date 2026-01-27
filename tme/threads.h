@@ -76,10 +76,32 @@ void tme_sjlj_threads_run _TME_P((void));
    rwlock operations: */
 #ifdef TME_NO_DEBUG_LOCKS
 typedef int tme_rwlock_t;
-#define tme_rwlock_init(l) (*(l) = FALSE, TME_OK)
-#define tme_rwlock_rdlock(l) (*(l) = TRUE, TME_OK)
-#define tme_rwlock_tryrdlock(l) (*(l) ? TME_EBUSY : tme_rwlock_rdlock(l))
-#define tme_rwlock_unlock(l) (*(l) = FALSE, TME_OK)
+static inline int
+tme_rwlock_init(tme_rwlock_t *l)
+{
+  *l = FALSE;
+  return TME_OK;
+}
+
+static inline int
+tme_rwlock_rdlock(tme_rwlock_t *l)
+{
+  *l = TRUE;
+  return TME_OK;
+}
+
+static inline int
+tme_rwlock_tryrdlock(tme_rwlock_t *l)
+{
+  return *l ? TME_EBUSY : tme_rwlock_rdlock(l);
+}
+
+static inline int
+tme_rwlock_unlock(tme_rwlock_t *l)
+{
+  *l = FALSE;
+  return TME_OK;
+}
 #else  /* !TME_NO_DEBUG_LOCKS */   
 
 /* debugging rwlocks: */

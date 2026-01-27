@@ -558,6 +558,7 @@ _tme_am9513_bus_cycle(void *_am9513, struct tme_bus_cycle *cycle_init)
 
   /* initialize value to silence -Wuninitialized: */
   value = NULL;
+  buffer = 0xffff;
 
   /* reads of the command register get the status, and writes to the
      command register are just processed: */
