@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -601,9 +612,9 @@ EOF
 	    echo ""
 	    echo "/* this does a NaN check for an IEEE 754 ${precision} precision ${type} function: */"
 	    echo "int"
-	    echo -n "tme_ieee754_${precision}_check_nan_${type}(struct tme_ieee754_ctl *ieee754_ctl, const struct tme_float *src0"
+	    echo_n "tme_ieee754_${precision}_check_nan_${type}(struct tme_ieee754_ctl *ieee754_ctl, const struct tme_float *src0"
 	    if ${monadic}; then :; else
-		echo -n ", const struct tme_float *src1"
+		echo_n ", const struct tme_float *src1"
 	    fi
 	    echo ", struct tme_float *dst)"
 	    echo "{"

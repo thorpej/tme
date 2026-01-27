@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo_n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -206,48 +217,48 @@ if $header; then :; else
 
 		    # the Never condition:
 		    #
-		    echo -n "  0"
+		    echo_n "  0"
 		    
 		    # the Equal condition:
 		    #
 		    if test $zflag = 1; then
-			echo -n "  | TME_BIT(1)"
+			echo_n "  | TME_BIT(1)"
 		    fi
 			
 		    # the Less or Equal condition:
 		    #
 		    if test $zflag = 1 || test $nflag != $vflag; then
-			echo -n "  | TME_BIT(2)"
+			echo_n "  | TME_BIT(2)"
 		    fi
 
 		    # the Less condition:
 		    #
 		    if test $nflag != $vflag; then
-			echo -n "  | TME_BIT(3)"
+			echo_n "  | TME_BIT(3)"
 		    fi
 
 		    # the Less or Equal Unsigned condition:
 		    #
 		    if test $cflag = 1 || test $zflag = 1; then
-			echo -n "  | TME_BIT(4)"
+			echo_n "  | TME_BIT(4)"
 		    fi
 
 		    # the Carry Set condition:
 		    #
 		    if test $cflag = 1; then
-			echo -n "  | TME_BIT(5)"
+			echo_n "  | TME_BIT(5)"
 		    fi
 
 		    # the Negative condition:
 		    #
 		    if test $nflag = 1; then
-			echo -n "  | TME_BIT(6)"
+			echo_n "  | TME_BIT(6)"
 		    fi
 
 		    # the Overflow Set condition:
 		    #
 		    if test $vflag = 1; then
-			echo -n "  | TME_BIT(7)"
+			echo_n "  | TME_BIT(7)"
 		    fi
 
 		    echo ","

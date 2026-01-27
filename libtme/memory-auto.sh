@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -221,7 +232,7 @@ for size in ${sizes}; do
 	    host_boundary=`expr ${host_boundary} / 2`
 	done
 	echo ""
-	echo -n "  assert (bus_boundary != 0 && bus_boundary <= host_boundary);"
+	echo_n "  assert (bus_boundary != 0 && bus_boundary <= host_boundary);"
 
 	# loop over the possible host boundaries:
 	#
@@ -243,9 +254,9 @@ for size in ${sizes}; do
 		    echo ""
 		    echo "#ifdef TME_HAVE_INT${host_boundary}_T"
 		    echo ""
-		    echo -n " "
+		    echo_n " "
 		fi
-		echo -n " if (host_boundary == sizeof(tme_uint${host_boundary}_t))"
+		echo_n " if (host_boundary == sizeof(tme_uint${host_boundary}_t))"
 	    fi
 	    echo " {"
 
@@ -294,7 +305,7 @@ for size in ${sizes}; do
 		    # to the access size:
 		    #
 		    echo "${indent0}    else {"
-		    echo -n "${indent0}      x ${access_or}= "
+		    echo_n "${indent0}      x ${access_or}= "
 		    if test `expr ${host_boundary} \> ${size}` = 1; then
 			echo "((part${host_boundary} << ${size_skip}) >> ((${host_boundary} - ${size}) + ${size_done}));"
 		    else
@@ -378,10 +389,10 @@ for size in ${sizes}; do
 				echo ""
 				if test ${host_boundaries_worst} = 2; then
 				    echo "    /* try to write one full ${host_boundary}-bit part of memory: */"
-				    echo -n "    if (__tme_predict_true(size_done <= (${size} - ${host_boundary})))"
+				    echo_n "    if (__tme_predict_true(size_done <= (${size} - ${host_boundary})))"
 				else
 				    echo "    /* write as many full ${host_boundary}-bit parts of the memory as we can: */"
-				    echo -n "    for (; size_done <= (${size} - ${host_boundary}); )"
+				    echo_n "    for (; size_done <= (${size} - ${host_boundary}); )"
 				fi
 				echo " {"
 				echo ""
@@ -407,10 +418,10 @@ for size in ${sizes}; do
 		    echo ""
 		    if $access_if; then
 			echo "    /* ${op} at most one remaining ${host_boundary}-bit part of the memory: */"
-			echo -n "    if (__tme_predict_false(size_done < ${size}))"
+			echo_n "    if (__tme_predict_false(size_done < ${size}))"
 		    else
 			echo "    /* ${op} any remaining ${host_boundary}-bit parts of the memory: */"
-			echo -n "    for (; size_done < ${size}; size_done += ${host_boundary})"
+			echo_n "    for (; size_done < ${size}; size_done += ${host_boundary})"
 		    fi
 		    echo " {"
 
@@ -437,15 +448,15 @@ for size in ${sizes}; do
 	    #
 	    if test ${host_boundary} != 8; then
 		echo ""
-		echo -n "  else"
+		echo_n "  else"
 		if test `expr ${host_boundary} \>= ${size_ifdef}` = 1; then
 		    echo ""
 		    echo ""
-		    echo -n "#endif /* TME_HAVE_INT${host_boundary}_T */"
+		    echo_n "#endif /* TME_HAVE_INT${host_boundary}_T */"
 		    if test ${host_boundary} = ${size_ifdef}; then
 			echo ""
 			echo ""
-			echo -n " "
+			echo_n " "
 		    fi
 		fi
 	    fi
@@ -593,9 +604,9 @@ for op in read write; do
 	    echo "#ifdef TME_HAVE_INT${host_boundary}_T"
 	fi
 	echo ""
-	echo -n "  else"
+	echo_n "  else"
 	if test ${host_boundary} != 8; then
-	    echo -n " if (host_boundary == sizeof(tme_uint${host_boundary}_t))"
+	    echo_n " if (host_boundary == sizeof(tme_uint${host_boundary}_t))"
 	fi
 	echo " {"
 
@@ -1015,10 +1026,10 @@ for size in ${sizes}; do
 
 			    # emit one partial transfer:
 			    #
-			    echo -n "${op_indent2}"
+			    echo_n "${op_indent2}"
 			    op_delim=${op_semi}
 			    if test ${op} = read; then
-				if test ${size_done} = 0; then echo -n '('; else echo -n ' | '; fi
+				if test ${size_done} = 0; then echo_n '('; else echo_n ' | '; fi
 				if test `expr ${size_done} + ${size_now}` = ${size}; then op_delim=')'; fi
 			    fi
 			    echo "_tme_memory${type}_${op}(tme_uint${size}_t, tme_uint${size_now}_t, mem, (${size_done} / 8)${op_x})${op_delim} \\"
@@ -1058,13 +1069,13 @@ for size in ${sizes}; do
 		echo "${op_indent0}/* if threads are cooperative, do a plain ${op}: */ \\"
 		echo "${op_indent0}(TME_THREADS_COOPERATIVE) \\"
 		echo "${op_then}"
-		echo -n "${op_indent2}tme_memory_${op}${size}("
+		echo_n "${op_indent2}tme_memory_${op}${size}("
 		# this strips off the tme_shared qualifier:
 		#
 		if test ${op} = read; then
-		    echo -n "(_tme_const tme_uint${size}_t *) _tme_audit_type(mem, tme_uint${size}_t *)"
+		    echo_n "(_tme_const tme_uint${size}_t *) _tme_audit_type(mem, tme_uint${size}_t *)"
 		else
-		    echo -n "(tme_uint${size}_t *) _tme_cast_pointer_shared(tme_uint${size}_t *, tme_uint${size}_t *, mem)"
+		    echo_n "(tme_uint${size}_t *) _tme_cast_pointer_shared(tme_uint${size}_t *, tme_uint${size}_t *, mem)"
 		fi
 		echo "${op_x}, align_min)${op_semi} \\"
 
@@ -1090,13 +1101,13 @@ for size in ${sizes}; do
 		echo "${op_indent0}/* if threads are cooperative, do a plain ${op}: */ \\"
 		echo "${op_indent0}(TME_THREADS_COOPERATIVE) \\"
 		echo "${op_then}"
-		echo -n "${op_indent2}tme_memory_${op}${size}("
+		echo_n "${op_indent2}tme_memory_${op}${size}("
 		# this strips off the tme_shared qualifier:
 		#
 		if test ${op} = read; then
-		    echo -n "(_tme_const tme_uint${size}_t *) _tme_audit_type(mem, tme_uint${size}_t *)"
+		    echo_n "(_tme_const tme_uint${size}_t *) _tme_audit_type(mem, tme_uint${size}_t *)"
 		else
-		    echo -n "(tme_uint${size}_t *) _tme_cast_pointer_shared(tme_uint${size}_t *, tme_uint${size}_t *, mem)"
+		    echo_n "(tme_uint${size}_t *) _tme_cast_pointer_shared(tme_uint${size}_t *, tme_uint${size}_t *, mem)"
 		fi
 		echo "${op_x}, align_min)${op_semi} \\"
 

@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -137,7 +148,7 @@ while test ${i_width} != 32; do
 			# emit the responder information:
 			#
 			echo "     responder bus port size: ${r_width} bits"
-			echo -n "     responder port least lane: D"`expr ${r_lane_least} + 7`"-D${r_lane_least}"
+			echo_n "     responder port least lane: D"`expr ${r_lane_least} + 7`"-D${r_lane_least}"
 
 			# if the responder bus port greatest lane is
 			# greater than the initiator bus port width,
@@ -146,7 +157,7 @@ while test ${i_width} != 32; do
 			#
 			if test `expr ${r_lane_greatest} \>= ${i_width}` = 1; then
 			    echo ""
-			    echo -n "     (responder port not correctly positioned for this initiator)"
+			    echo_n "     (responder port not correctly positioned for this initiator)"
 			fi
 			echo ": */"
 
@@ -161,7 +172,7 @@ while test ${i_width} != 32; do
 			    route_increment=1
 			fi
 			while test `expr ${lane} \< ${i_width}` = 1; do
-			    echo -n "  /* D"`expr ${lane} + 7`"-D${lane} */	"
+			    echo_n "  /* D"`expr ${lane} + 7`"-D${lane} */	"
 
 			    # see if this lane is on in the responder:
 			    #
@@ -185,18 +196,18 @@ while test ${i_width} != 32; do
 			    # if this is a placeholder entry:
 			    #
 			    if $placeholder; then
-				echo -n "TME_BUS_LANE_ABORT"
+				echo_n "TME_BUS_LANE_ABORT"
 
 			    # otherwise, this is a real entry:
 			    #
 			    else
 				if $i_lane_on; then
-				    echo -n "TME_BUS_LANE_ROUTE(${route})"
+				    echo_n "TME_BUS_LANE_ROUTE(${route})"
 				    if $r_lane_on; then :; else
-					echo -n " | TME_BUS_LANE_WARN"
+					echo_n " | TME_BUS_LANE_WARN"
 				    fi
 				else
-				    echo -n "TME_BUS_LANE_UNDEF"
+				    echo_n "TME_BUS_LANE_UNDEF"
 				fi
 			    fi
 

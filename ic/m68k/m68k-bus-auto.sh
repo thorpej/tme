@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -153,7 +164,7 @@ if $header; then :; else
 			esac
 
 			# emit the comment for this lane:
-			echo -n "  /* D"`expr \( \( ${lane} + 1 \) \* 8 \) - 1`"-D"`expr ${lane} \* 8`" */	"
+			echo_n "  /* D"`expr \( \( ${lane} + 1 \) \* 8 \) - 1`"-D"`expr ${lane} \* 8`" */	"
 
 			# if this port size/position combination is
 			# invalid, override everything and abort if
@@ -162,15 +173,15 @@ if $header; then :; else
 			    echo "TME_BUS_LANE_ABORT,"
 			else
 			    if test $lane_read = "ABORT"; then
-				echo -n "TME_BUS_LANE_ABORT"
+				echo_n "TME_BUS_LANE_ABORT"
 			    elif test $lane_read != "IGNORE"; then
 				if test $lane_read != $lane_write; then
 				    echo "$PROG internal error: code ${transfer}:${address}:${lane}, reading $lane_read but writing $lane_write" 1>&2
 				    exit 1
 				fi
-				echo -n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_read)"
+				echo_n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_read)"
 			    else
-				echo -n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_write) | TME_BUS_LANE_ROUTE_WRITE_IGNORE"
+				echo_n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_write) | TME_BUS_LANE_ROUTE_WRITE_IGNORE"
 			    fi
 			    echo "${lane_warn},"
 			fi
@@ -347,7 +358,7 @@ if $header; then :; else
 			esac
 
 			# emit the comment for this lane:
-			echo -n "  /* D"`expr \( \( ${lane} + 1 \) \* 8 \) - 1`"-D"`expr ${lane} \* 8`" */	"
+			echo_n "  /* D"`expr \( \( ${lane} + 1 \) \* 8 \) - 1`"-D"`expr ${lane} \* 8`" */	"
 
 			# if this port size/position combination is
 			# invalid, override everything and abort if
@@ -360,11 +371,11 @@ if $header; then :; else
 				    echo "$PROG internal error: code ${transfer}.${address}.${port_size}.${port_pos}, reading $lane_read but writing $lane_write" 1>&2
 				    exit 1
 				fi
-				echo -n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_read)"
+				echo_n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_read)"
 			    elif test $lane_write = "UNDEF"; then
-				echo -n "TME_BUS_LANE_UNDEF"
+				echo_n "TME_BUS_LANE_UNDEF"
 			    else
-				echo -n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_write) | TME_BUS_LANE_ROUTE_WRITE_IGNORE"
+				echo_n "TME_BUS_LANE_ROUTE(SIZ"`expr ${transfer} \* 8`"_$lane_write) | TME_BUS_LANE_ROUTE_WRITE_IGNORE"
 			    fi
 			    echo "${lane_warn},"
 			fi

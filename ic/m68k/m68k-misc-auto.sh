@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -157,69 +168,69 @@ if $header; then :; else
 		    for cflag in 0 1; do
 		    
 			# the True condition:
-			echo -n "TME_BIT(TME_M68K_C_T)"
+			echo_n "TME_BIT(TME_M68K_C_T)"
 			
 			# the High condition:
 			if test $cflag != 1 && test $zflag != 1; then
-			    echo -n " | TME_BIT(TME_M68K_C_HI)"
+			    echo_n " | TME_BIT(TME_M68K_C_HI)"
 			fi
 			
 			# the Low or Same condition:
 			if test $cflag = 1 || test $zflag = 1; then
-			    echo -n " | TME_BIT(TME_M68K_C_LS)"
+			    echo_n " | TME_BIT(TME_M68K_C_LS)"
 			fi
 			
 			# the Carry Clear and Carry Set conditions:
 			if test $cflag != 1; then
-			    echo -n " | TME_BIT(TME_M68K_C_CC)"
+			    echo_n " | TME_BIT(TME_M68K_C_CC)"
 			else
-			    echo -n " | TME_BIT(TME_M68K_C_CS)"
+			    echo_n " | TME_BIT(TME_M68K_C_CS)"
 			fi
 			
 			# the Not Equal and Equal conditions:
 			if test $zflag != 1; then
-			    echo -n " | TME_BIT(TME_M68K_C_NE)"
+			    echo_n " | TME_BIT(TME_M68K_C_NE)"
 			else
-			    echo -n " | TME_BIT(TME_M68K_C_EQ)"
+			    echo_n " | TME_BIT(TME_M68K_C_EQ)"
 			fi
 			
 			# the Overflow Clear and Overflow Set conditions:
 			if test $vflag != 1; then
-			    echo -n " | TME_BIT(TME_M68K_C_VC)"
+			    echo_n " | TME_BIT(TME_M68K_C_VC)"
 			else
-			    echo -n " | TME_BIT(TME_M68K_C_VS)"
+			    echo_n " | TME_BIT(TME_M68K_C_VS)"
 			fi
 			
 			# the Plus and Minus conditions:
 			if test $nflag != 1; then
-			    echo -n " | TME_BIT(TME_M68K_C_PL)"
+			    echo_n " | TME_BIT(TME_M68K_C_PL)"
 			else
-			    echo -n " | TME_BIT(TME_M68K_C_MI)"
+			    echo_n " | TME_BIT(TME_M68K_C_MI)"
 			fi
 			
 			# the Greater or Equal condition:
 			if (test $nflag = 1 && test $vflag = 1) || \
 			   (test $nflag != 1 && test $vflag != 1); then
-			    echo -n " | TME_BIT(TME_M68K_C_GE)"
+			    echo_n " | TME_BIT(TME_M68K_C_GE)"
 			fi
 			
 			# the Less Than condition:
 			if (test $nflag = 1 && test $vflag != 1) || \
 			   (test $nflag != 1 && test $vflag = 1); then
-			    echo -n " | TME_BIT(TME_M68K_C_LT)"
+			    echo_n " | TME_BIT(TME_M68K_C_LT)"
 			fi
 
 			# the Greater Than condition:
 			if (test $nflag = 1 && test $vflag = 1 && test $zflag != 1) || \
 			   (test $nflag != 1 && test $vflag != 1 && test $zflag != 1); then
-			    echo -n " | TME_BIT(TME_M68K_C_GT)"
+			    echo_n " | TME_BIT(TME_M68K_C_GT)"
 			fi
 		    
 			# the Less Than or Equal condition:
 			if test $zflag = 1 || \
 			   (test $nflag = 1 && test $vflag != 1) || \
 			   (test $nflag != 1 && test $vflag = 1); then
-			    echo -n " | TME_BIT(TME_M68K_C_LE)"
+			    echo_n " | TME_BIT(TME_M68K_C_LE)"
 			fi
 
 			echo ","
@@ -264,8 +275,8 @@ if $header; then
     for executor in fast slow; do
 
 	echo ""
-	echo -n "#if"
-	if test $executor = slow; then echo -n "n"; fi
+	echo_n "#if"
+	if test $executor = slow; then echo_n "n"; fi
 	echo "def _TME_M68K_EXECUTE_FAST"
 	echo ""
 	echo "/* these macros are for the ${executor} executor: */"
@@ -339,15 +350,15 @@ if $header; then
 	    echo "#define _TME_M68K_EXECUTE_FETCH_${size}_FIXED(type, v, field) \\"
 	    echo "  assert(&((struct tme_m68k *) 0)->field \\"
 	    echo "         == (type *) (((tme_uint8_t *) &((struct tme_m68k *) 0)->_tme_m68k_insn_fetch_buffer[0]) + ${offset_fetch})); \\"
-	    echo -n "  "
-	    if test ${executor} = fast; then echo -n _ ; fi
+	    echo_n "  "
+	    if test ${executor} = fast; then echo_n _ ; fi
 	    echo "_TME_M68K_EXECUTE_FETCH_${size}(type, v)"
 
 	done
 
 	echo ""
-	echo -n "#endif /* "
-	if test $executor = slow; then echo -n "!"; fi
+	echo_n "#endif /* "
+	if test $executor = slow; then echo_n "!"; fi
 	echo "_TME_M68K_EXECUTE_FAST */"
     done
 fi

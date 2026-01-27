@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo_n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -576,9 +587,9 @@ for arch in 32 64; do
 
 			echo ""
 			echo "  /* if src2 is greater than src1, set C: */"
-			echo -n "  cc += ((((tme_uint${arch_cc}_t) src2) > ((tme_uint${arch_cc}_t) src1))"
+			echo_n "  cc += ((((tme_uint${arch_cc}_t) src2) > ((tme_uint${arch_cc}_t) src1))"
 			if test "x${with_c}" != x; then
-			    echo -n " || (((tme_uint${arch_cc}_t) src2) == ((tme_uint${arch_cc}_t) src1) && (ic->${ccr_ireg} & TME_SPARC${ccr}_ICC_C))"
+			    echo_n " || (((tme_uint${arch_cc}_t) src2) == ((tme_uint${arch_cc}_t) src1) && (ic->${ccr_ireg} & TME_SPARC${ccr}_ICC_C))"
 			fi
 			echo ") * TME_SPARC${ccr}_${xcc}_C;"
 			;;
@@ -616,9 +627,9 @@ for arch in 32 64; do
 
 		echo ""
 		echo "  /* set the condition codes: */"
-		echo -n "  ic->${ccr_ireg} = "
+		echo_n "  ic->${ccr_ireg} = "
 		if test ${arch} = 32; then
-		    echo -n "(ic->${ccr_ireg} & ~TME_SPARC32_PSR_ICC) | "
+		    echo_n "(ic->${ccr_ireg} & ~TME_SPARC32_PSR_ICC) | "
 		fi
 		echo "cc;"
 	    fi
@@ -805,8 +816,8 @@ for arch in 32 64; do
 	    fi
 	    echo "  tme_uint32_t asi_mask_flags_slow;"
 	    echo "  struct tme_sparc_tlb *dtlb;"
-	    echo -n "  "
-	    if test ${slow} = load; then echo -n "const "; fi
+	    echo_n "  "
+	    if test ${slow} = load; then echo_n "const "; fi
 	    echo "tme_shared tme_uint8_t *memory;"
 	    echo "  tme_bus_context_t dtlb_context;"
 	    echo "  tme_uint32_t endian_little;"
@@ -1012,7 +1023,7 @@ for arch in 32 64; do
 	    echo "    memory = tme_sparc${arch}_ls(ic,"
 	    echo "                            address,"
 	    echo "                            &TME_SPARC_FORMAT3_RD,"
-	    echo -n "                            (TME_SPARC_LSINFO_OP_"
+	    echo_n "                            (TME_SPARC_LSINFO_OP_"
 	    if ${atomic}; then
 		echo "ATOMIC"
 	    elif test ${slow} = store; then
@@ -1020,17 +1031,17 @@ for arch in 32 64; do
 	    else
 		echo "LD"
 	    fi
-	    echo -n "                             | "
+	    echo_n "                             | "
 	    case ${insn} in
 	    ldd* | std*)
 		echo "TME_SPARC_LSINFO_LDD_STD"
-		echo -n "                             | "
+		echo_n "                             | "
 		;;
 	    esac
 	    if ${alternate}; then
 		echo "TME_SPARC_LSINFO_ASI(TME_SPARC_ASI_MASK_WHICH(${asi_mask_data} & ~TME_SPARC_ASI_MASK_FLAG_UNDEF))"
 		echo "                             | TME_SPARC_LSINFO_A"
-		echo -n "                             | "
+		echo_n "                             | "
 	    fi
 	    echo "(${size} / 8)));"
 	    
@@ -1563,7 +1574,7 @@ for arch in 32 64; do
 		echo ""
 		echo "  /* otherwise, this is an ldfsr.  do the load: */"
 		echo "  else"
-		echo -n "  "
+		echo_n "  "
 	    fi
 	    echo "  tme_sparc${arch}_ld(ic, _rs1, _rs2, &ic->tme_sparc_ireg_uint${arch}(TME_SPARC_IREG_FPX));"
 	    echo ""
@@ -1614,7 +1625,7 @@ for arch in 32 64; do
 		echo ""
 		echo "  /* otherwise, this is a stfsr.  do the store: */"
 		echo "  else"
-		echo -n "  "
+		echo_n "  "
 	    fi
 	    echo "  tme_sparc${arch}_st(ic, _rs1, _rs2, &ic->tme_sparc_ireg_uint${arch}(TME_SPARC_IREG_FPX));"
 	    echo ""

@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 # this script generates one or more C functions.  each function
 # translates an image from a source image format into a destination
 # image format, optionally halving or doubling the image size in the
@@ -786,10 +797,10 @@ for src_key in ${src_all}; do
 	echo ""
 	echo "/* this translates frame buffer contents from this source format:"
 	case "${width}x${height}" in
-	0x0) echo -n "     any dimensions" ;;
-	*x0) echo -n "     width $width, any height" ;;
-	0x*) echo -n "     any width, height ${height}" ;;
-	*)   echo -n "     ${width}x${height}" ;;
+	0x0) echo_n "     any dimensions" ;;
+	*x0) echo_n "     width $width, any height" ;;
+	0x*) echo_n "     any width, height ${height}" ;;
+	*)   echo_n "     ${width}x${height}" ;;
 	esac
 	xlat_info="${xlat_info}, ${width}, ${height}"
 	case ${scale} in
@@ -798,104 +809,104 @@ for src_key in ${src_all}; do
 	*) echo "" ; value="NONE" ;;
 	esac
 	xlat_info="${xlat_info}, TME_FB_XLAT_SCALE_${value}"
-	echo -n "     "
+	echo_n "     "
 	case ${src_depth} in
-	0)  echo -n "any depth" ;;
-	1)  echo -n "1 bit deep" ;;
-	*)  echo -n "${src_depth} bits deep" ;;
+	0)  echo_n "any depth" ;;
+	1)  echo_n "1 bit deep" ;;
+	*)  echo_n "${src_depth} bits deep" ;;
 	esac
 	xlat_info="${xlat_info}, ${src_depth}"
 	case ${src_bipp} in
-	0)  echo -n ", any bits per pixel" ;;
-	1)  echo -n ", 1 bit per pixel" ;;
-	*)  echo -n ", ${src_bipp} bits per pixel" ;;
+	0)  echo_n ", any bits per pixel" ;;
+	1)  echo_n ", 1 bit per pixel" ;;
+	*)  echo_n ", ${src_bipp} bits per pixel" ;;
 	esac
 	xlat_info="${xlat_info}, ${src_bipp}"
 	case ${src_skipx} in
-	_) echo -n ", any number of pixels skipped" ; value="-1";;
-	*) echo -n ", ${src_skipx} pixels skipped" ; value=${src_skipx} ;;
+	_) echo_n ", any number of pixels skipped" ; value="-1";;
+	*) echo_n ", ${src_skipx} pixels skipped" ; value=${src_skipx} ;;
 	esac
 	xlat_info="${xlat_info}, ${value}"
 	case ${src_pad} in
-	0)  echo -n ", any scanline padding" ;;
-	*)  echo -n ", ${src_pad}-bit scanline padding" ;;
+	0)  echo_n ", any scanline padding" ;;
+	*)  echo_n ", ${src_pad}-bit scanline padding" ;;
 	esac
 	xlat_info="${xlat_info}, ${src_pad}"
 	case ${src_order} in
-	m)  echo -n ", MSB-first" ; value="BIG" ;;
-	l)  echo -n ", LSB-first" ; value="LITTLE" ;;
+	m)  echo_n ", MSB-first" ; value="BIG" ;;
+	l)  echo_n ", LSB-first" ; value="LITTLE" ;;
 	esac
 	xlat_info="${xlat_info}, TME_ENDIAN_${value}"
 	case "x${src_class}" in
-	xm)  echo -n ", monochrome" ; value="MONOCHROME" ;;
-	xc)  echo -n ", color" ; value="COLOR" ;;
-	*)   echo -n ", either color or monochrome" ; value="ANY" ;;
+	xm)  echo_n ", monochrome" ; value="MONOCHROME" ;;
+	xc)  echo_n ", color" ; value="COLOR" ;;
+	*)   echo_n ", either color or monochrome" ; value="ANY" ;;
 	esac
 	xlat_info="${xlat_info}, TME_FB_XLAT_CLASS_${value}"
 	case "x${src_map}" in
-	xl)  echo -n ", linearly mapped pixels" ; value="LINEAR" ;;
-	xi)  echo -n ", index mapped pixels" ; value="INDEX" ;;
-	*)   echo -n ", any pixel mapping" ; value="ANY" ;;
+	xl)  echo_n ", linearly mapped pixels" ; value="LINEAR" ;;
+	xi)  echo_n ", index mapped pixels" ; value="INDEX" ;;
+	*)   echo_n ", any pixel mapping" ; value="ANY" ;;
 	esac
 	xlat_info="${xlat_info}, TME_FB_XLAT_MAP_${value}"
 	value=${src_map_bits}
 	case "${src_map_bits}" in
-	0)   echo -n ", any bits per mapped intensity" ;;
-	1)   echo -n ", 1 bit per mapped intensity" ;;
-	*)   echo -n ", ${src_map_bits} bits per mapped intensity" ;;
+	0)   echo_n ", any bits per mapped intensity" ;;
+	1)   echo_n ", 1 bit per mapped intensity" ;;
+	*)   echo_n ", ${src_map_bits} bits per mapped intensity" ;;
 	esac
 	xlat_info="${xlat_info}, ${value}"
 	for primary in g r b; do
 	    eval "src_mask=\$src_mask_${primary}"
 	    case "x${src_mask}" in
-	    x)  echo -n ", no ${primary} mask" ; value=0 ;;
-	    x0x0) echo -n ", any ${primary} mask" ; value=TME_FB_XLAT_MASK_ANY ;;
-	    *)  echo -n ", a ${primary} mask of ${src_mask}" ; value=${src_mask} ;;
+	    x)  echo_n ", no ${primary} mask" ; value=0 ;;
+	    x0x0) echo_n ", any ${primary} mask" ; value=TME_FB_XLAT_MASK_ANY ;;
+	    *)  echo_n ", a ${primary} mask of ${src_mask}" ; value=${src_mask} ;;
 	    esac
 	    xlat_info="${xlat_info}, ${value}"
 	done
 	echo ""
 	echo "   to this destination format:"
-	echo -n "     "
+	echo_n "     "
 	case ${dst_depth} in
-	0)  echo -n "any depth" ;;
-	1)  echo -n "1 bit deep" ;;
-	*)  echo -n "${dst_depth} bits deep" ;;
+	0)  echo_n "any depth" ;;
+	1)  echo_n "1 bit deep" ;;
+	*)  echo_n "${dst_depth} bits deep" ;;
 	esac
 	xlat_info="${xlat_info}, ${dst_depth}"
 	case ${dst_bipp} in
-	0)  echo -n ", any bits per pixel" ;;
-	1)  echo -n ", 1 bit per pixel" ;;
-	*)  echo -n ", ${dst_bipp} bits per pixel" ;;
+	0)  echo_n ", any bits per pixel" ;;
+	1)  echo_n ", 1 bit per pixel" ;;
+	*)  echo_n ", ${dst_bipp} bits per pixel" ;;
 	esac
 	xlat_info="${xlat_info}, ${dst_bipp}"
 	case ${dst_skipx} in
-	_) echo -n ", any number of pixels skipped" ; value="-1";;
-	*) echo -n ", ${dst_skipx} pixels skipped" ; value=${dst_skipx} ;;
+	_) echo_n ", any number of pixels skipped" ; value="-1";;
+	*) echo_n ", ${dst_skipx} pixels skipped" ; value=${dst_skipx} ;;
 	esac
 	xlat_info="${xlat_info}, ${value}"
 	case ${dst_pad} in
-	0)  echo -n ", any scanline padding" ;;
-	*)  echo -n ", ${dst_pad}-bit scanline padding" ;;
+	0)  echo_n ", any scanline padding" ;;
+	*)  echo_n ", ${dst_pad}-bit scanline padding" ;;
 	esac
 	xlat_info="${xlat_info}, ${dst_pad}"
 	case ${dst_order} in
-	m)  echo -n ", MSB-first" ; value="BIG" ;;
-	l)  echo -n ", LSB-first" ; value="LITTLE" ;;
+	m)  echo_n ", MSB-first" ; value="BIG" ;;
+	l)  echo_n ", LSB-first" ; value="LITTLE" ;;
 	esac
 	xlat_info="${xlat_info}, TME_ENDIAN_${value}"
 	case "x${dst_map}" in
-	xl)  echo -n ", linearly mapped pixels" ; value="LINEAR" ;;
-	xi)  echo -n ", index mapped pixels" ; value="INDEX" ;;
-	*)   echo -n ", any pixel mapping" ; value="ANY" ;;
+	xl)  echo_n ", linearly mapped pixels" ; value="LINEAR" ;;
+	xi)  echo_n ", index mapped pixels" ; value="INDEX" ;;
+	*)   echo_n ", any pixel mapping" ; value="ANY" ;;
 	esac
 	xlat_info="${xlat_info}, TME_FB_XLAT_MAP_${value}"
 	for primary in g r b; do
 	    eval "dst_mask=\$dst_mask_${primary}"
 	    case "x${dst_mask}" in
-	    x)  echo -n ", no ${primary} mask" ; value=0 ;;
-	    x0x0) echo -n ", any ${primary} mask" ; value=TME_FB_XLAT_MASK_ANY ;;
-	    *)  echo -n ", a ${primary} mask of ${dst_mask}" ; value=${dst_mask} ;;
+	    x)  echo_n ", no ${primary} mask" ; value=0 ;;
+	    x0x0) echo_n ", any ${primary} mask" ; value=TME_FB_XLAT_MASK_ANY ;;
+	    *)  echo_n ", a ${primary} mask of ${dst_mask}" ; value=${dst_mask} ;;
 	    esac
 	    xlat_info="${xlat_info}, ${value}"
 	done

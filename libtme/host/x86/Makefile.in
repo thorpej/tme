@@ -508,8 +508,8 @@ uninstall-am:
 make-rc-x86-subs.c:
 	echo '/* automatically generated, do not edit! */' >> $@
 	echo '' >> $@
-	echo -n '#if TME_RECODE_SIZE_HOST ' >> $@
-	if test `uname -p` = i386; then echo -n '==' >> $@; else echo -n '>' >> $@; fi
+	printf '#if TME_RECODE_SIZE_HOST ' >> $@
+	if test `uname -p` = i386; then printf '==' >> $@; else printf '>' >> $@; fi
 	echo ' TME_RECODE_SIZE_32' >> $@
 	echo '' >> $@
 	gcc -o rc-x86-subs-asm.o -c rc-x86-subs-asm.S

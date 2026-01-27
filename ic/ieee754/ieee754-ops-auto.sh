@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -181,9 +192,9 @@ for level in ${levels}; do
 		    if test "${level}-${what}" = strict-funcs; then
 			echo ""
 			echo "  /* this does a ${precision}-precision "`echo ${name} | tr _ -`": */"
-			echo -n "  void (*tme_ieee754_ops_${precision}_${name}) _TME_P((struct tme_ieee754_ctl *, "
+			echo_n "  void (*tme_ieee754_ops_${precision}_${name}) _TME_P((struct tme_ieee754_ctl *, "
 			if $monadic; then :; else
-			    echo -n "_tme_const struct tme_float *, "
+			    echo_n "_tme_const struct tme_float *, "
 			fi
 			echo "_tme_const ${src_type}, ${dst_type} *));"
 		    fi
@@ -420,9 +431,9 @@ for level in ${levels}; do
 			echo ""
 			echo "/* this does a ${level} compliance ${precision}-precision "`echo ${name} | tr _ -`": */"
 			echo "static void"
-			echo -n "${func}(struct tme_ieee754_ctl *ieee754_ctl, const ${src_type}src0, "
+			echo_n "${func}(struct tme_ieee754_ctl *ieee754_ctl, const ${src_type}src0, "
 			if $monadic; then :; else
-			    echo -n "const struct tme_float *src1, "
+			    echo_n "const struct tme_float *src1, "
 			fi
 			echo "${dst_type} *dst)"
 			echo "{"
@@ -545,10 +556,10 @@ for level in ${levels}; do
 			    if test "${func_softfloat}" = "${func_softfloat_raw}"; then
 				func_softfloat="${precision_sf}_${func_softfloat}"
 			    fi
-			    echo -n "    ${func_softfloat}(${op0}"
+			    echo_n "    ${func_softfloat}(${op0}"
 			    if test "x${op1}" != x; then
 				echo ","
-				echo -n "                ${op1}"
+				echo_n "                ${op1}"
 			    fi
 			    echo "));"
 			    ;;
@@ -688,10 +699,10 @@ if $header; then :; else
 
     echo ""
     echo "/* this is a compliance options string: */"
-    echo -n "const char * const tme_ieee754_compliance_options = \"{ ";
+    echo_n "const char * const tme_ieee754_compliance_options = \"{ ";
     sep=
     for level in ${levels}; do
-	echo -n "${sep}${level}"
+	echo_n "${sep}${level}"
 	sep=' | '
     done
     echo " }\";"

@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -106,17 +117,17 @@ for size in 8 16 32; do
 
 	    # open the function:
 	    echo ""
-	    echo -n "/* this does a ${size}-bit \"$name "
-	    case "${src}/${dst}" in *op0*) echo -n "SRC, " ;; esac
+	    echo_n "/* this does a ${size}-bit \"$name "
+	    case "${src}/${dst}" in *op0*) echo_n "SRC, " ;; esac
 	    echo "DST\": */"
 	    echo "TME_M68K_INSN(tme_m68k_${name}${size})"
 	    echo "{"
 
 	    # declare our locals:
 	    if test $name = cmpa; then size=32; fi
-	    echo -n "  tme_uint${size}_t res"
-	    case "${src}/${dst}" in *op0*) echo -n ", op0" ;; esac
-	    case "${src}/${dst}" in *op1*) echo -n ", op1" ;; esac
+	    echo_n "  tme_uint${size}_t res"
+	    case "${src}/${dst}" in *op0*) echo_n ", op0" ;; esac
+	    case "${src}/${dst}" in *op1*) echo_n ", op1" ;; esac
 	    echo ";"
 	    echo "  tme_uint8_t flags;"
 
@@ -142,14 +153,14 @@ for size in 8 16 32; do
 
 		# the stack pointer must always be adjusted by a multiple of two.
 		# assuming ireg < 8, ((ireg + 1) >> 3) == 1 iff ireg == 7, meaning %a7:
-		echo -n "  tme_uint32_t ireg_src_adjust = sizeof(tme_uint${size}_t)";
+		echo_n "  tme_uint32_t ireg_src_adjust = sizeof(tme_uint${size}_t)";
 		if test ${size} = 8; then
-		    echo -n " + ((ireg_src + 1) >> 3)"
+		    echo_n " + ((ireg_src + 1) >> 3)"
 		fi
 		echo ";"
-		echo -n "  tme_uint32_t ireg_dst_adjust = sizeof(tme_uint${size}_t)";
+		echo_n "  tme_uint32_t ireg_dst_adjust = sizeof(tme_uint${size}_t)";
 		if test ${size} = 8; then
-		    echo -n " + ((ireg_dst + 1) >> 3)"
+		    echo_n " + ((ireg_dst + 1) >> 3)"
 		fi
 		echo ";"
 
@@ -233,9 +244,9 @@ for size in 8 16 32; do
 	    # perform the operation:
 	    echo ""
 	    echo "  /* perform the operation: */"
-	    echo -n "  res = ${dst}${op}${src}"
+	    echo_n "  res = ${dst}${op}${src}"
 	    if $with_x; then
-		echo -n "${op}((ic->tme_m68k_ireg_ccr / TME_M68K_FLAG_X) & 1)"
+		echo_n "${op}((ic->tme_m68k_ireg_ccr / TME_M68K_FLAG_X) & 1)"
 	    fi
 	    echo ";"
 
@@ -302,9 +313,9 @@ for size in 8 16 32; do
 		# of the type, to try to affect the generated assembly:
 		echo "  flags |= ((tme_uint8_t) (((${src} ^ ${dst} ^ ${ones}) & (${dst} ^ res)) >> (${size} - 1))) * TME_M68K_FLAG_V;"
 		# if src is greater than the logical inverse of dst, set C:
-		echo -n "  if (${src} > (${dst} ^ ${ones})"
+		echo_n "  if (${src} > (${dst} ^ ${ones})"
 		if $with_x; then
-		    echo -n " || (${src} == (${dst} ^ ${ones}) && (ic->tme_m68k_ireg_ccr & TME_M68K_FLAG_X))"
+		    echo_n " || (${src} == (${dst} ^ ${ones}) && (ic->tme_m68k_ireg_ccr & TME_M68K_FLAG_X))"
 		fi
 		echo ") flags |= TME_M68K_FLAG_C${flag_x};"
 		;;
@@ -316,9 +327,9 @@ for size in 8 16 32; do
 		# generated assembly:
 		echo "  flags |= ((tme_uint8_t) (((${src} ^ ${dst}) & (${dst} ^ res)) >> (${size} - 1))) * TME_M68K_FLAG_V;"
 		# if src is greater than dst, set C:
-		echo -n "  if (${src} > ${dst}"
+		echo_n "  if (${src} > ${dst}"
 		if $with_x; then
-		    echo -n " || (${src} == ${dst} && (ic->tme_m68k_ireg_ccr & TME_M68K_FLAG_X))"
+		    echo_n " || (${src} == ${dst} && (ic->tme_m68k_ireg_ccr & TME_M68K_FLAG_X))"
 		fi
 		echo ") flags |= TME_M68K_FLAG_C${flag_x};"
 		;;
@@ -772,7 +783,7 @@ for size in 8 16 32; do
 	else
 	    echo "      tme_m68k_read_memx${size}(ic);"
 	    echo "      if (!TME_M68K_SEQUENCE_RESTARTING) {"
-	    echo -n "        ic->tme_m68k_ireg_uint32(ireg) = "
+	    echo_n "        ic->tme_m68k_ireg_uint32(ireg) = "
 	    if test $size = 32; then
 		echo "ic->tme_m68k_ireg_memx${size};"
 	    else
@@ -897,8 +908,8 @@ for size in 8 16 32; do
 	echo "                                  value_du,"
 	echo "                                  tlb->tme_m68k_tlb_bus_rwlock,"
 	echo "                                  sizeof(tme_uint8_t));"
-   	echo -n "    ic->tme_m68k_ireg_memx${size} = "
-	if test ${size} != 8; then echo -n "tme_betoh_u${size}"; fi
+   	echo_n "    ic->tme_m68k_ireg_memx${size} = "
+	if test ${size} != 8; then echo_n "tme_betoh_u${size}"; fi
 	echo "(value_mem);"
 	echo ""
 	echo "    /* step the transfer count once for the read, and once for the write: */"
@@ -1055,7 +1066,7 @@ for size in 8 16 32; do
 	    echo "        TME_EXT_S${size}_U32((tme_int${size}_t) ic->tme_m68k_ireg_memx${size});"
 	    echo "    }"
 	    echo "    else"
-	    echo -n "  "
+	    echo_n "  "
 	fi
 	echo "    ic->tme_m68k_ireg_uint${size}(ireg${reg_size_shift}) = ic->tme_m68k_ireg_memx${size};"
 	echo "  }"
@@ -1174,7 +1185,7 @@ for size in 8 16 32 any; do
 
 		# our locals:
 		echo "  tme_bus_context_t bus_context = ic->_tme_m68k_bus_context;"
-		echo -n "  unsigned int function_code = "
+		echo_n "  unsigned int function_code = "
 		if test "x${fc}" != x; then
 		    echo "${fc};"
 		    fc="function_code"
@@ -1183,7 +1194,7 @@ for size in 8 16 32 any; do
 		    fc=`echo ${fcptr} | sed -e 's,^&,,'`
 		    echo "${fc};"
 		fi
-		echo -n "  tme_uint32_t linear_address${_first} = "
+		echo_n "  tme_uint32_t linear_address${_first} = "
 		if test "x${addr}" != x; then
 		    echo "${addr};"
 		    addr="linear_address${_first}"
@@ -1327,12 +1338,12 @@ for size in 8 16 32 any; do
 		    echo "${i}  if (__tme_predict_true(!TME_M68K_SEQUENCE_RESTARTING"
 		    align_min="sizeof(tme_uint8_t)"
 		    if test $size != 8; then
-			echo -n "${i}                         && ("
+			echo_n "${i}                         && ("
 			if test $what = inst; then
 			    align_min="sizeof(tme_uint16_t)"
-			    echo -n "(${align_min} - 1)"
+			    echo_n "(${align_min} - 1)"
 			else
-			    echo -n "ic->_tme_m68k_bus_16bit"
+			    echo_n "ic->_tme_m68k_bus_16bit"
 			fi
 			echo " & linear_address${_first}) == 0"
 		    fi
@@ -1363,9 +1374,9 @@ for size in 8 16 32 any; do
 		    echo ""
 		    echo "${i}    /* do the ${size}-bit bus ${name}: */"
 		    if test $name = read; then
-			echo -n "${i}    mem_value = tme_memory_bus_${name}${size}(mem"
+			echo_n "${i}    mem_value = tme_memory_bus_${name}${size}(mem"
 		    else
-			echo -n "${i}    tme_memory_bus_${name}${size}(mem, mem_value"
+			echo_n "${i}    tme_memory_bus_${name}${size}(mem, mem_value"
 		    fi
 		    echo ", tlb->tme_m68k_tlb_bus_rwlock, ${align_min}, sizeof(tme_uint32_t));"
 
@@ -1717,9 +1728,9 @@ for size in 8 16 32 any; do
 	    fi
 	    echo "      cycle.tme_bus_cycle_type"
 	    echo "        |= (TME_BUS_CYCLE_LOCK"
-	    echo -n "            | ("
+	    echo_n "            | ("
 	    if test ${name} = read; then
-		echo -n "transferred == 0 ? 0 : "
+		echo_n "transferred == 0 ? 0 : "
 	    fi
 	    echo "TME_BUS_CYCLE_UNLOCK));"
 	    echo "    }"
@@ -1783,9 +1794,9 @@ for size in 8 16 32 any; do
 	    echo "  /* if we faulted, stash the information the fault stacker"
 	    echo "     will need and start exception processing: */"
 	    echo "  if (exception != TME_M68K_EXCEPTION_NONE) {"
-	    echo -n "    ic->_tme_m68k_group0_flags = flags"
+	    echo_n "    ic->_tme_m68k_group0_flags = flags"
 	    if test $name = read; then
-		echo -n " | TME_M68K_BUS_CYCLE_READ"
+		echo_n " | TME_M68K_BUS_CYCLE_READ"
 	    fi
 	    echo ";"
 	    echo "    ic->_tme_m68k_group0_function_code = function_code;"
@@ -1952,11 +1963,11 @@ for reg in ccr sr; do
 
 	# form the new register value:
 	src=0
-	echo -n "  reg = "
+	echo_n "  reg = "
 	case $name in
-	ori) echo -n "ic->tme_m68k_ireg_${reg} | " ;;
-	andi) echo -n "ic->tme_m68k_ireg_${reg} & " ;;
-	eori) echo -n "ic->tme_m68k_ireg_${reg} ^ " ;;
+	ori) echo_n "ic->tme_m68k_ireg_${reg} | " ;;
+	andi) echo_n "ic->tme_m68k_ireg_${reg} & " ;;
+	eori) echo_n "ic->tme_m68k_ireg_${reg} ^ " ;;
 	move_to) size=16 ; src=1 ;;
 	esac
 	echo "(TME_M68K_INSN_OP${src}(tme_uint${size}_t) & TME_M68K_FLAG_"`echo $reg | tr a-z A-Z`");"
@@ -2018,7 +2029,7 @@ for _sign in u s; do
 
 	echo ""
 	echo "  /* get the register containing the factor: */"
-	echo -n "  ireg_dl = TME_M68K_IREG_D0 + "
+	echo_n "  ireg_dl = TME_M68K_IREG_D0 + "
 	if test $size = s; then
 	    echo "TME_M68K_INSN_OP0(tme_uint32_t);"
 	else
@@ -2049,9 +2060,9 @@ for _sign in u s; do
 	echo "  if (res == 0) flags |= TME_M68K_FLAG_Z;"
 	if test $large = 64; then
 	    if test $_sign = s; then
-		echo -n "  if (res > 0x7fffffffL || res < ((0L - 0x7fffffffL) - 1L)"
+		echo_n "  if (res > 0x7fffffffL || res < ((0L - 0x7fffffffL) - 1L)"
 	    else
-		echo -n "  if (res > 0xffffffffUL"
+		echo_n "  if (res > 0xffffffffUL"
 	    fi
 	    echo ") flags |= flag_v;"
 	fi
@@ -2081,7 +2092,7 @@ for _sign in u s; do
 
 	echo ""
 	echo "  /* get the register(s): */"
-	echo -n "  ireg_dq = TME_M68K_IREG_D0 + "
+	echo_n "  ireg_dq = TME_M68K_IREG_D0 + "
 	if test $size = s; then
 	    echo "TME_M68K_INSN_OP0(tme_uint32_t);"
 	else
@@ -2098,7 +2109,7 @@ for _sign in u s; do
 	    echo "                | ic->tme_m68k_ireg_uint32(ireg_dq));"
 	    echo "  }"
 	    echo "  else"
-	    echo -n "  "
+	    echo_n "  "
 	fi
 	echo "  dividend = (tme_${sign}int${large}_t) ic->tme_m68k_ireg_${sign}int32(ireg_dq);"
 	echo "  divisor = TME_M68K_INSN_OP1(tme_${sign}int${small}_t);"
@@ -2116,12 +2127,12 @@ for _sign in u s; do
 	echo ""
 	echo "  /* set the flags and return the quotient and remainder: */"
 	echo "  flags = ic->tme_m68k_ireg_ccr & TME_M68K_FLAG_X;"
-	echo -n "  if ("
+	echo_n "  if ("
 	case "${small}${_sign}" in
-	16s) echo -n "quotient > 0x7fff || quotient < -32768" ;;
-	16u) echo -n "quotient > 0xffff" ;;
-	32s) echo -n "quotient > 0x7fffffffL || quotient < ((0L - 0x7fffffffL) - 1L)" ;;
-	32u) echo -n "quotient > 0xffffffffUL" ;;
+	16s) echo_n "quotient > 0x7fff || quotient < -32768" ;;
+	16u) echo_n "quotient > 0xffff" ;;
+	32s) echo_n "quotient > 0x7fffffffL || quotient < ((0L - 0x7fffffffL) - 1L)" ;;
+	32u) echo_n "quotient > 0xffffffffUL" ;;
 	esac
 	echo ") {"
 	echo "    flags |= TME_M68K_FLAG_V;"

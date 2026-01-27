@@ -36,6 +36,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# Emulate "echo -n", because it's not supported in every shell's
+# built-in echo.
+#
+# Assumes a single fully quoted argument.
+#
+echo_n()
+{
+    printf "$1"
+}
+
 header=false
 
 for option
@@ -81,7 +92,7 @@ EOF
 	#
 	opmode_bitmap=0
 	opmode_bit=1
-	echo -n "  "
+	echo_n "  "
 	;;
 
 	table)
@@ -104,7 +115,7 @@ EOF
 	    # this byte:
 	    #
 	    if test ${what} = bitmap && test ${opmode_bit} = 256; then
-		echo -n "${opmode_bitmap}, "
+		echo_n "${opmode_bitmap}, "
 		opmode_bitmap=0
 		opmode_bit=1
 	    fi
@@ -227,38 +238,38 @@ EOF
 	    
 		echo ""
 		echo "  /* opmode ${opmode}: */"
-		echo -n "  { "
+		echo_n "  { "
 
 		# the function:
 		#
 		if test "x${name}" = x; then
-		    echo -n "NULL"
-		    echo -n ", 0"
+		    echo_n "NULL"
+		    echo_n ", 0"
 		    fpu_types=TME_M68K_FPU_NONE
 		elif test "x${name_ieee754}" != x; then
-		    echo -n "NULL"
-		    echo -n ", TME_M6888X_IEEE754_OP(tme_ieee754_ops_extended80_${name_ieee754})"
+		    echo_n "NULL"
+		    echo_n ", TME_M6888X_IEEE754_OP(tme_ieee754_ops_extended80_${name_ieee754})"
 		else
-		    echo -n "_tme_m6888x_f${name}"
-		    echo -n ", 0"
+		    echo_n "_tme_m6888x_f${name}"
+		    echo_n ", 0"
 		fi
 
 		# the m6888x types:
 		#
-		echo -n ", ${fpu_types}"
+		echo_n ", ${fpu_types}"
 
 		# the operation type:
 		#
 		if test ${optype} != MONADIC; then optype="DYADIC_${optype}"; fi
-		echo -n ", TME_M6888X_OPTYPE_${optype}"
+		echo_n ", TME_M6888X_OPTYPE_${optype}"
 
 		# the rounding mode:
 		#
-		echo -n ", TME_FLOAT_ROUND_${rounding_mode}"
+		echo_n ", TME_FLOAT_ROUND_${rounding_mode}"
 	
 		# the rounding precision:
 		#
-		echo -n ", TME_M6888X_ROUNDING_PRECISION_${rounding_precision}"
+		echo_n ", TME_M6888X_ROUNDING_PRECISION_${rounding_precision}"
 
 		echo " },"
 		;;

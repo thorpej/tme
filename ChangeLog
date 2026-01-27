@@ -1,3 +1,14 @@
+Tue Jan 27 14:13:33 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* generic/bus-device-auto.sh generic/fb-xlat-auto.sh
+	ic/ieee754/ieee754-misc-auto.sh ic/ieee754/ieee754-ops-auto.sh
+	ic/m68k/m6888x-auto.sh ic/m68k/m68k-bus-auto.sh
+	ic/m68k/m68k-insns-auto.sh ic/m68k/m68k-misc-auto.sh
+	ic/sparc/sparc-bus-auto.sh ic/sparc/sparc-insns-auto.sh
+	ic/sparc/sparc-misc-auto.sh libtme/memory-auto.sh
+	libtme/host/x86/Makefile.am: Add an "echo_n" shell function
+	that emulates "echo -n" with printf(1)
+
 Tue Jan 27 12:48:17 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* tme/generic/float.h (tme_float_is_inf): Use isinf()
