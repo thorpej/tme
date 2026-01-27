@@ -1,3 +1,13 @@
+Tue Jan 27 14:36:48 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* Makefile.am: Move tmeconfig.h from CLEANFILES to DISTCLEANFILES.
+	* libtme/Makefile.am: Move misc-host.c recode-host.c from
+	CLEANFILES to DISTCLEANFILES.
+	* tme/Makefile.am: Move recode-host.h from CLEANFILES to
+	DISTCLEANFILES.
+	* Makefile.in libtme/Makefile.in tme/Makefile.in: Regenerate
+	using automake (GNU automake) 1.18.
+
 Tue Jan 27 14:19:55 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* ic/mk48txx.c (_tme_mk48txx_bcd_in): Comment out unused

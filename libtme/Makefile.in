@@ -438,7 +438,8 @@ SUBDIRS = host
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. $(INCLTDL) $(GTK_CFLAGS) \
               -D_TME_IMPL
 
-CLEANFILES = misc-host.c recode-host.c memory-auto.h memory-auto.c
+CLEANFILES = memory-auto.h memory-auto.c
+DISTCLEANFILES = misc-host.c recode-host.c
 lib_LTLIBRARIES = libtme.la
 pkginclude_HEADERS = memory-auto.h
 libtme_la_SOURCES = misc-host.c \
@@ -813,6 +814,7 @@ clean-generic:
 distclean-generic:
 	-$(am__rm_f) $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || $(am__rm_f) $(CONFIG_CLEAN_VPATH_FILES)
+	-$(am__rm_f) $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"

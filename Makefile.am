@@ -6,7 +6,7 @@ SUBDIRS = tme libltdl libtme generic ic machine host bus serial scsi tmesh tools
 EXTRA_DIST = modules dist
 pkgdata_DATA = tmeconfig.h
 
-CLEANFILES = tmeconfig.h
+DISTCLEANFILES = tmeconfig.h
 
 ACLOCAL_AMFLAGS = -I libltdl/m4
 

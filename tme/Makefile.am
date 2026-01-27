@@ -5,7 +5,8 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 SUBDIRS = generic ic machine scsi host bus
 
-CLEANFILES = recode-host.h *.la
+CLEANFILES = *.la
+DISTCLEANFILES = recode-host.h
 
 pkginclude_HEADERS = memory.h \
 	common.h \
