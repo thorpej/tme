@@ -8,6 +8,8 @@ SUBDIRS = host
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. $(INCLTDL) $(GTK_CFLAGS) \
               -D_TME_IMPL
 
+CLEANFILES = misc-host.c recode-host.c memory-auto.h memory-auto.c
+
 lib_LTLIBRARIES = libtme.la
 pkginclude_HEADERS = memory-auto.h
 libtme_la_SOURCES = misc-host.c \

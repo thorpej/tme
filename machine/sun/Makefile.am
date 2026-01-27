@@ -5,6 +5,8 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. -D_TME_IMPL
 
+CLEANFILES = tme-sun-idprom tme-sun-eeprom
+
 pkglib_LTLIBRARIES = libtme-machine-sun.la
 libtme_machine_sun_la_SOURCES = sun-mmu.c \
 	sun-bwtwo.c \

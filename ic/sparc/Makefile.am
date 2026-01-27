@@ -5,6 +5,9 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. -D_TME_IMPL 
 
+CLEANFILES = sparc-auto.h sparc-insns-auto.c sparc-bus-auto.c \
+	     sparc-fpu-auto.c sparc-vis-auto.c
+
 pkglib_LTLIBRARIES = tme_ic_sparc.la
 tme_ic_sparc_la_SOURCES = \
 	sparc-insns.c \

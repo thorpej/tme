@@ -5,6 +5,9 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. -D_TME_IMPL 
 
+CLEANFILES = m68k-auto.h m68k-opmap.c m68k-insns-auto.c m68k-bus-auto.c \
+	     m6888x-auto.c
+
 pkglib_LTLIBRARIES = tme_ic_m68k.la
 tme_ic_m68k_la_SOURCES = m68k-opmap.c \
 	m68k-insns.c \

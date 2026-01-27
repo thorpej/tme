@@ -1,5 +1,35 @@
-Mon Jan 26 16:03:58 2026  Jason Thorpe  <thorpej@netbsd.org>
+Tue Jan 27 05:51:54 2026  Jason Thorpe  <thorpej@netbsd.org>
 
+	* generic/bus-device-auto.c generic/float-auto.c
+	ic/ieee754/ieee754-auto.h ic/ieee754/ieee754-ops-auto.c
+	ic/ieee754/ieee754-ops-auto.h ic/m68k/m6888x-auto.c
+	ic/m68k/m68k-auto.h ic/m68k/m68k-bus-auto.c
+	ic/m68k/m68k-insns-auto.c ic/m68k/m68k-opmap.c
+	ic/sparc/sparc-auto.h ic/sparc/sparc-bus-auto.c
+	ic/sparc/sparc-fpu-auto.c ic/sparc/sparc-insns-auto.c
+	ic/sparc/sparc-vis-auto.c libtme/memory-auto.c
+	libtme/memory-auto.h tmesh/tmesh-input.c: Remove.
+	* Makefile.am (CLEANFILES): Add tmeconfig.h.
+	* generic/Makefile.am (CLEANFILES): Add fb-xlat-auto.c float-auto.c
+	bus-device-auto.c
+	* ic/ieee754/Makefile.am (CLEANFILES): Add ieee754-auto.h
+	ieee754-misc-auto.c ieee754-ops-auto.h ieee754-ops-auto.c
+	* ic/m68k/Makefile.am (CLEANFILES): Add m68k-auto.h m68k-opmap.c
+	m68k-insns-auto.c m68k-bus-auto.c m6888x-auto.c
+	* ic/sparc/Makefile.am (CLEANFILES): Add sparc-auto.h
+	sparc-insns-auto.c sparc-bus-auto.c sparc-fpu-auto.c sparc-vis-auto.c
+	* libtme/Makefile.am (CLEANFILES): Add misc-host.c recode-host.c
+	memory-auto.h memory-auto.c
+	* machine/sun/Makefile.am (CLEANFILES): Add tme-sun-idprom
+	tme-sun-eeprom
+	* tme/Makefile.am (CLEANFILES): Add recode-host.h *.la
+	* tmesh/Makefile.am (CLEANFILES): Add tmesh-input.c
+	* Makefile.in generic/Makefile.in ic/ieee754/Makefile.in
+	ic/m68k/Makefile.in ic/sparc/Makefile.in libtme/Makefile.in
+	machine/sun/Makefile.in tme/Makefile.in tmesh/Makefile.in:
+	Regenerate using automake (GNU automake) 1.18.
+
+Mon Jan 26 16:03:58 2026  Jason Thorpe  <thorpej@netbsd.org>
 	* libtme/Makefile.am: Remove shlibvar.h dependency and rule.
 	* libtme/Makefile.in: Regenerate using automake (GNU automake) 1.18.
 	* libtme/module.c: Remove include of <shlibvar.h>.

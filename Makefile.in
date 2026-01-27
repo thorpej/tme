@@ -415,6 +415,7 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 SUBDIRS = tme libltdl libtme generic ic machine host bus serial scsi tmesh tools
 EXTRA_DIST = modules dist
 pkgdata_DATA = tmeconfig.h
+CLEANFILES = tmeconfig.h
 ACLOCAL_AMFLAGS = -I libltdl/m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -841,6 +842,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-$(am__rm_f) $(CLEANFILES)
 
 distclean-generic:
 	-$(am__rm_f) $(CONFIG_CLEAN_FILES)

@@ -5,6 +5,8 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. -D_TME_IMPL
 
+CLEANFILES = tmesh-input.c
+
 lib_LTLIBRARIES = libtmesh.la
 libtmesh_la_SOURCES = \
 	tmesh-impl.h \

@@ -5,6 +5,8 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. -D_TME_IMPL
 
+CLEANFILES = fb-xlat-auto.c float-auto.c bus-device-auto.c
+
 lib_LTLIBRARIES = libtme-generic.la
 libtme_generic_la_SOURCES = bus.c \
 	bus-device.c \

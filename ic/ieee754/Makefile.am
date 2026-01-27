@@ -5,6 +5,9 @@ AUTOMAKE_OPTIONS = 1.4 gnu
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir) -I. -D_TME_IMPL
 
+CLEANFILES = ieee754-auto.h ieee754-misc-auto.c ieee754-ops-auto.h \
+	     ieee754-ops-auto.c
+
 tmeicincludedir = $(pkgincludedir)/ic
 tmeicinclude_HEADERS = ieee754-auto.h ieee754-ops-auto.h
 lib_LTLIBRARIES = libtme-ieee754.la
