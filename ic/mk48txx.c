@@ -130,12 +130,14 @@ _tme_mk48txx_bcd_out(unsigned int value)
   return ((value % 10)
 	  + ((value / 10) * 16));
 }
+#if 0
 static inline unsigned int
 _tme_mk48txx_bcd_in(tme_uint8_t value)
 {
   return ((value % 16)
 	  + ((value / 16) * 10));
 }
+#endif
 
 /* this resets an mk48txx: */
 static void

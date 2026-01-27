@@ -1,3 +1,11 @@
+Tue Jan 27 14:19:55 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* ic/mk48txx.c (_tme_mk48txx_bcd_in): Comment out unused
+	function.
+	* ic/ncr89c105.c (_tme_ncr89c105_bus_cycle): Initialize
+	"value8" to avoid a -Wsometimes-uninitialized warning that
+	the compiler can't reason through when assert() is disabled.
+
 Tue Jan 27 14:13:33 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* generic/bus-device-auto.sh generic/fb-xlat-auto.sh

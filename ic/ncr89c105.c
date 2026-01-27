@@ -95,6 +95,12 @@ _tme_ncr89c105_bus_cycle(void *_ncr89c105,
   /* if this is a write: */
   if (cycle_init->tme_bus_cycle_type == TME_BUS_CYCLE_WRITE) {
 
+    /* XXX silence a false -Wsometimes-uninitialized warning from
+       clang that it can't reason trough when assertions are
+       turned off.  */
+    value8 = 0;
+
+
     /* get the value written: */
     tme_bus_cycle_xfer_memory(cycle_init,
 			      ((cycle_size == sizeof(value8)
