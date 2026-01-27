@@ -8,6 +8,8 @@ Tue Jan 27 14:13:33 2026  Jason Thorpe  <thorpej@netbsd.org>
 	ic/sparc/sparc-misc-auto.sh libtme/memory-auto.sh
 	libtme/host/x86/Makefile.am: Add an "echo_n" shell function
 	that emulates "echo -n" with printf(1)
+	libtme/host/x86/Makefile.in: Regenerate using automake
+	(GNU automake) 1.18.
 
 Tue Jan 27 12:48:17 2026  Jason Thorpe  <thorpej@netbsd.org>
 
