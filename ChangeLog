@@ -1,3 +1,11 @@
+Mon Jan 26 16:03:58 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* libtme/Makefile.am: Remove shlibvar.h dependency and rule.
+	* libtme/Makefile.in: Regenerate using automake (GNU automake) 1.18.
+	* libtme/module.c: Remove include of <shlibvar.h>.
+	* tme/Makefile.am: Add *.la to CLEANFILES.
+	* tme/Makefile.in: Regenerate using automake (GNU automake) 1.18.
+
 Mon Jan 26 10:33:49 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* configure.ac: Add -Wno-error=unused-but-set-variable and

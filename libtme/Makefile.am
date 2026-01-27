@@ -44,9 +44,3 @@ memory-auto.h: memory-auto.sh
 memory-auto.c: memory-auto.sh
 	$(SHELL) $(srcdir)/memory-auto.sh > $@
 memory-auto.lo: memory-auto.h
-
-# module.c needs to know the LTDL_SHLIBPATH_VAR that libltdl
-# is using:
-module.lo: shlibvar.h
-shlibvar.h: $(top_builddir)/libltdl/config.h
-	grep LTDL_SHLIBPATH_VAR $(top_builddir)/libltdl/config.h > $@

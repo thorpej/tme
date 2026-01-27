@@ -46,7 +46,6 @@ _TME_RCSID("$Id: module.c,v 1.10 2010/06/05 19:04:42 fredette Exp $");
 #include <ctype.h>
 #include <string.h>
 #include <ltdl.h>
-#include <shlibvar.h>
 
 /* the libtool 1.5 used in tme development is supposed to add code to
    configure that decides whether to use an already-installed libltdl

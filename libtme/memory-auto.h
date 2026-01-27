@@ -33,6 +33,8 @@
 
 _TME_RCSID("$Id: memory-auto.sh,v 1.2 2010/02/15 15:16:28 fredette Exp $");
 
+#include <limits.h>
+#include <stdint.h>
 /* macros: */
 
 /* the plain partial read internal macro: */
@@ -66,7 +68,7 @@ _TME_RCSID("$Id: memory-auto.sh,v 1.2 2010/02/15 15:16:28 fredette Exp $");
 
 /* this returns a mask of all-bits-one in given type: */
 #define _tme_memory_type_mask(type, shift)				\
-  ((type) ((((type) 0) - ((type) 1)) shift))
+  ((type) (UINTMAX_MAX shift))
 
 
 /* the bus 16-bit read slow function: */
