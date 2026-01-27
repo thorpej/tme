@@ -32,7 +32,7 @@ dnl ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 dnl POSSIBILITY OF SUCH DAMAGE.
 
 dnl Checks that we are given a good source directory.
-AC_INIT([tme],[0.8])
+AC_INIT([tme],[0.9])
 AC_CONFIG_SRCDIR(ic/m68k/m68k-impl.h)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE

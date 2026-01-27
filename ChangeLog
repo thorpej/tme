@@ -1,3 +1,8 @@
+Tue Jan 27 07:54:52 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* configure.ac: Bump version to 0.9.
+	* configure: Genenerate using autoconf (GNU Autoconf) 2.72.
+
 Tue Jan 27 06:07:49 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* configure.ac: Check for awk using AC_PROG_AWK and use
