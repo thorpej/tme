@@ -43,6 +43,7 @@ dnl Write configuration out to config.h through config.h.in.
 AC_CONFIG_HEADERS(config.h)
 
 dnl Checks for programs.
+AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_YACC
@@ -735,8 +736,8 @@ TMEEOF
 #  done) | sort | uniq >> ${outfile}-tmp
 #  grep FLOAT_FORMAT config.h | \
 #    sed 's/#define[ 	]\{1,\}\([A-Za-z0-9_]\{1,\}\)[ 	]\{1,\}\([A-Za-z0-9_]\{1,\}\)/#define TME_\1 TME_FLOAT_FORMAT_\2/' >> ${outfile}-tmp
-  awk "$tmeconfig_h_xform_config_h" config.h | sort | uniq >> ${outfile}-tmp
-  awk "$tmeconfig_h_xform_float_format" config.h >> ${outfile}-tmp
+  $AWK "$tmeconfig_h_xform_config_h" config.h | sort | uniq >> ${outfile}-tmp
+  $AWK "$tmeconfig_h_xform_float_format" config.h >> ${outfile}-tmp
   case $ac_cv_c_bigendian in #(
     yes)
       echo "#define _TME_WORDS_BIGENDIAN 1" >> ${outfile}-tmp
