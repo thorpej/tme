@@ -1,3 +1,9 @@
+Tue Jan 27 12:18:41 2026  Jason Thorpe  <thorpej@netbsd.org>
+
+	* libtme/log-prf.c: Declare and use a static constant
+	string ll_str and use it instead of a string literal
+	in order to avoid a specific warning from clang.
+
 Tue Jan 27 07:54:52 2026  Jason Thorpe  <thorpej@netbsd.org>
 
 	* configure.ac: Bump version to 0.9.

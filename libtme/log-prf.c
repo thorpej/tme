@@ -34,6 +34,7 @@
  */
 
 {
+  static const char ll_str[] = "ll";
   
   /* start the variable arguments: */
 #ifdef HAVE_STDARG_H
@@ -106,7 +107,7 @@
       }
 
       /* reset all flags, precisions, etc., and enter state two: */
-      prf_flag_ls = "ll" + 2;
+      prf_flag_ls = ll_str + 2;
       prf_flag_0 = FALSE;
       prf_width = -1;
       prf_state = 2;
