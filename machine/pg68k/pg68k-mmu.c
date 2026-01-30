@@ -61,7 +61,7 @@ struct tme_pg68k_mmu_pmeg {
 
   /* the current list of TLBs using a page table entry in this PMEG, and
      the head within that list: */
-  struct tme_token *tme_pg68k_mmu_pmeg_tlb_tokens[TME_SUN_MMU_PMEG_TLBS];
+  struct tme_token *tme_pg68k_mmu_pmeg_tlb_tokens[TME_PGMMU_PMEG_TLBS];
   unsigned int tme_pg68k_mmu_pmeg_tlbs_head;
 };
 
@@ -82,10 +82,10 @@ struct tme_pg68k_mmu {
   tme_pg68k_mmu_info.tme_pg68k_mmu_info_num_contexts
 #define tme_pg68k_mmu_num_pmegs \
   tme_pg68k_mmu_info.tme_pg68k_mmu_info_num_pmegs
-#define tme_pg68k_mmu_tlb_fill_private \
-  tme_pg68k_mmu_info.tme_pg68k_mmu_info_tlb_fill_private
-#define tme_pg68k_mmu_tlb_fill \
-  tme_pg68k_mmu_info.tme_pg68k_mmu_info_tlb_fill
+#define tme_pg68k_mmu_tlb_fill_phys_private \
+  tme_pg68k_mmu_info.tme_pg68k_mmu_info_tlb_fill_phys_private
+#define tme_pg68k_mmu_tlb_fill_phys \
+  tme_pg68k_mmu_info.tme_pg68k_mmu_info_tlb_fill_phys
 #define tme_pg68k_mmu_invalid_private \
   tme_pg68k_mmu_info.tme_pg68k_mmu_info_invalid_private
 #define tme_pg68k_mmu_invalid \
@@ -107,6 +107,7 @@ struct tme_pg68k_mmu {
 
   /* the segment map: */
   tme_uint16_t *tme_pg68k_mmu_segmap;
+  struct tme_token **tme_pg68k_mmu_segmap_tlb_tokens;
 
   /* the PMEGs: */
   struct tme_pg68k_mmu_pmeg *tme_pg68k_mmu_pmegs;
@@ -143,6 +144,9 @@ tme_pg68k_mmu_new(struct tme_pg68k_mmu_info *info)
   mmu->tme_pg68k_mmu_segmap = tme_new0(tme_uint16_t, map_count);
   /* XXX should initialize with junk */
 
+  mmu->tme_pg68k_mmu_segmap_tlb_tokens
+    = tme_new0(struct tme_token *, map_count);
+
   /* allocate the PMEGs: */
   mmu->tme_pg68k_mmu_pmegs
     = tme_new0(struct tme_pg68k_mmu_pmeg, mmu->tme_pg68k_mmu_num_pmegs);
@@ -157,10 +161,10 @@ tme_pg68k_mmu_new(struct tme_pg68k_mmu_info *info)
   return (mmu);
 }
 
-/* given a context and an address, returns the segmap entry and a
-   pointer to the pagemap entry:  */
-static int
-tme_pg68k_mmu_lookup(struct tme_pg68k_mmu *mmu,
+/* given a context and an address, returns indices for the segmap and,
+   if the segment is valid, page map entries.  */
+int
+tme_pg68k_mmu_lookup(void *_mmu,
                      tme_uint8_t context,
                      tme_uint32_t address,
                      unsigned int *sme_indexp,
@@ -170,6 +174,8 @@ tme_pg68k_mmu_lookup(struct tme_pg68k_mmu *mmu,
   unsigned int pme_index;
   unsigned int sme_index;
   unsigned int sme;
+
+  struct tme_pg68k_mmu *mmu = _mmu;
 
   /* lose the page offset bits: */
   address >>= mmu->tme_pg68k_mmu_pgoffset_bits;
@@ -217,7 +223,7 @@ tme_pg68k_mmu_pmeg_invalidate(struct tme_pg68k_mmu *mmu,
   pmeg = mmu->tme_pg68k_mmu_pmegs + pmeg_index;
 
   /* invalidate all of the TLBs: */
-  for (tlb_i = 0; tlb_i < TME_PG68K_MMU_PMEG_TLBS; tlb_i++) {
+  for (tlb_i = 0; tlb_i < TME_PGMMU_PMEG_TLBS; tlb_i++) {
     token = pmeg->tme_pg68k_mmu_pmeg_tlb_tokens[tlb_i];
     pmeg->tme_pg68k_mmu_pmeg_tlb_tokens[tlb_i] = NULL;
     if (token != NULL) {
@@ -351,12 +357,15 @@ tme_pg68k_mmu_tlb_fill(void *_mmu,
 {
   struct tme_pg68k_mmu *mmu;
   struct tme_pg68k_mmu_pmeg *pmeg;
+  struct tme_token *token_old;
+  struct tme_bus_tlb tlb_virtual;
   unsigned int sme_index;
   unsigned int pme_index;
   tme_bus_addr32_t addr_first, addr_last;
   tme_uint32_t physical_address;
   tme_uint16_t sme;
   tme_uint32_t pme;
+  unsigned int tlb_i;
   int rc;
 
   /* lookup this address: */
@@ -443,10 +452,10 @@ tme_pg68k_mmu_tlb_fill(void *_mmu,
      because maybe the virtual part of the address van influence the
      physical address: */
   physical_address = address;
-  (*mmu->tme_pg68k_mmu_tlb_fill)
-    (mmu->tme_pg68k_mmu_tlb_fill_private,
+  (*mmu->tme_pg68k_mmu_tlb_fill_phys)
+    (mmu->tme_pg68k_mmu_tlb_fill_phys_private,
      tlb,
-     pte,
+     pme,
      &physical_address,
      cycles);
 

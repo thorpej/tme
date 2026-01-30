@@ -40,22 +40,257 @@
 #include <tme/common.h>
 
 /* includes: */
+#include <tme/machine/pg68k.h>
 #include "phaethon1-impl.h"
+
+#ifndef TME_NO_LOG
+static const char * const tme_ph1_bus_names[] = {
+  [TME_PH1_BUS_RAM]  = "ram",
+  [TME_PH1_BUS_ROM]  = "rom",
+  [TME_PH1_BUS_OBIO] = "obio",
+  [TME_PH1_BUS_VME]  = "vme",
+};
+#endif
+
+/* this logs a bus error: */
+#ifndef TME_NO_LOG
+static void
+_tme_ph1_bus_fault_log(struct tme_ph1 *ph1,
+                       struct tme_bus_tlb *tlb,
+                       struct tme_bus_cycle *cycle,
+                       int bus_type)
+{
+  tme_bus_addr32_t virtual_address;
+  tme_uint32_t pme;
+  tme_bus_addr32_t physical_address;
+  unsigned int sme_index;
+  unsigned int pme_index;
+  int bus_type;
+  int rc;
+
+  /* recover the virtual address used: */
+  virtual_address = cycle->tme_bus_cycle_address - tlb->tme_bus_tlb_addr_offset;
+
+  /* look up the PME involved. since this is a real bus error, and not a
+     protection violation or page not present error, we assume the system
+     context.  */
+  rc = tme_pg68k_mmu_lookup(ph1->tme_ph1_mmu,
+                            0,
+                            virtual_address,
+                            &sme_index,
+                            &pme_index);
+  assert(rc == TME_OK);
+  pme = tme_pg68k_mmu_pme_get(ph1->tme_ph1_mmu,
+                              pme_index));
+
+  /* form the physical address and get the bus type. */
+  physical_address = ((pme & TME_PGMMU_PME_PFN_MASK)
+                      << TME_PH1_PAGE_SIZE_LOG2)
+                   | (virtual_address & (TME_PH1_PAGE_SIZE - 1));
+  bus_type = TME_PH1_PHYS_TO_BUS(physical_address);
+
+  /* log this bus error: */
+  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+          (TME_PH1_LOG_HANDLE(ph1),
+           _("%s bus error, physical 0x%08x, virtual 0x%08x, buserr = 0x%02x"),
+           tme_ph1_bus_names[bus_type],
+           physical_address,
+           virtual_address,
+           ph1->tme_ph1_buserror_value));
+}
+#else  /* TME_NO_LOG */
+#define _tme_ph1_bus_fault_log(a, b, c, d) do { } while (/*CONSTCOND*/ 0)
+#endif /* TME_NO_LOG */
+
+/* our general bus fault handler:  */
+static int
+_tme_ph1_bus_fault_handler(struct tme_ph1 *ph1,
+                           struct tme_bus_tlb *tlb,
+                           struct tme_bus_cycle *cycle,
+                           int rc,
+                           int bus_type,
+                           tme_uint8_t buserr)
+{
+  /* set the bus error register: */
+  ph1->tme_ph1_buserror_value = buserr;
+
+  /* log the fault: */
+   _tme_ph1_bus_fault_log(ph1, tlb, cycle, bus_type);
+
+  return (rc);
+}
+
+static int
+_tme_ph1_ram_bus_fault_handler(void *_ph1,
+                               struct tme_bus_tlb *tlb,
+                               struct tme_bus_cycle *cycle,
+                               int rc)
+{
+  tme_uint8_t all_bits_one[sizeof(tme_uint16_t)];
+
+  /* the bottom 8MB of RAM will never generate a bus error, but if
+     it happens to not be soldered down, it will return all 1s.  */
+  if (cycle->tme_bus_cycle_address < 0x800000) {
+    memset(all_bits_one, 0xff, sizeof(all_bits_one));
+    tme_bus_cycle_xfer_memory(cycle,
+                              &all_bits_one[0] - cycle->tme_bus_cycle_address,
+                              cycle->tme_bus_cycle_address
+                                + sizeof(all_bits_one));
+    return (TME_OK);
+  }
+
+  return _tme_ph1_bus_fault_handler(_ph1,
+                                    tlb,
+                                    cycle,
+                                    rc,
+                                    TME_PH1_BUS_RAM,
+                                    TME_PGMMU_BERR_TIMEOUT);
+}
+
+static int
+_tme_ph1_rom_bus_fault_handler(void *_ph1,
+                               struct tme_bus_tlb *tlb,
+                               struct tme_bus_cycle *cycle,
+                               int rc)
+{
+  tme_uint8_t all_bits_one[sizeof(tme_uint16_t)];
+
+  /* ROM will never generate a bus error. */
+  memset(all_bits_one, 0xff, sizeof(all_bits_one));
+  tme_bus_cycle_xfer_memory(cycle,
+                            &all_bits_one[0] - cycle->tme_bus_cycle_address,
+                            cycle->tme_bus_cycle_address
+                              + sizeof(all_bits_one));
+
+  return (TME_OK);
+}
+
+static int
+_tme_ph1_obio_bus_fault_handler(void *_ph1,
+                                struct tme_bus_tlb *tlb,
+                                struct tme_bus_cycle *cycle,
+                                int rc)
+{
+  return _tme_ph1_bus_fault_handler(_ph1,
+                                    tlb,
+                                    cycle,
+                                    rc,
+                                    TME_PH1_BUS_OBIO,
+                                    TME_PGMMU_BERR_TIMEOUT);
+}
+
+static int
+_tme_ph1_vme_bus_fault_handler(void *_ph1,
+                               struct tme_bus_tlb *tlb,
+                               struct tme_bus_cycle *cycle,
+                               int rc)
+{
+  return _tme_ph1_bus_fault_handler(_ph1,
+                                    tlb,
+                                    cycle,
+                                    rc,
+                                    TME_PH1_BUS_VME,
+                                    rc == ENOENT
+                                      ? TME_PGMMU_BERR_TIMEOUT
+                                      : TME_PGMMU_BERR_VME);
+}
+
+/* our page-invalid cycle handler: */
+static int
+_tme_ph1_mmu_invalid(void *_ph1,
+                     struct tme_bus_cycle *cycle)
+{
+  struct tme_ph1 *ph1;
+
+  /* recover our ph1: */
+  ph1 = (struct tme_ph1 *) _ph1;
+
+  /* log this bus error: */
+  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+          (TME_PH1_LOG_HANDLE(ph1),
+           _("page invalid bus error")));
+
+  ph1->tme_ph1_buserror_value = TME_PGMMU_BERR_INVALID;
+
+  /* return the fault: */
+  return (EFAULT);
+}
+
+/* our page-privileged cycle handler: */
+static int
+_tme_ph1_mmu_priv(void *_ph1,
+                  struct tme_bus_cycle *cycle)
+{
+  struct tme_ph1 *ph1;
+
+  /* recover our ph1: */
+  ph1 = (struct tme_ph1 *) _ph1;
+
+  /* log this bus error: */
+  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+          (TME_PH1_LOG_HANDLE(ph1),
+           _("page privileged bus error")));
+
+  ph1->tme_ph1_buserror_value = TME_PGMMU_BERR_PRIV;
+
+  /* return the fault: */
+  return (EFAULT);
+}
+
+/* our page-protected cycle handler: */
+static int
+_tme_ph1_mmu_prot(void *_ph1,
+                  struct tme_bus_cycle *cycle)
+{
+  struct tme_ph1 *ph1;
+
+  /* recover our ph1: */
+  ph1 = (struct tme_ph1 *) _ph1;
+
+  /* log this bus error: */
+  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+          (TME_PH1_LOG_HANDLE(ph1),
+           _("page protected bus error")));
+
+  ph1->tme_ph1_buserror_value = TME_PGMMU_BERR_PROT;
+
+  /* return the fault: */
+  return (EFAULT);
+}
+
+static int
+_tme_ph1_mmu_dma_not_supported(void *_ph1,
+                               struct tme_bus_cycle *cycle)
+{
+  struct tme_ph1 *ph1;
+
+  /* recover our ph1: */
+  ph1 = (struct tme_ph1 *) _ph1;
+
+  /* log this bus error: */
+  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+          (TME_PH1_LOG_HANDLE(ph1),
+           _("DMA not supported on Phaethon 1")));
+
+  ph1->tme_ph1_buserror_value = TME_PGMMU_BERR_INVALID;
+
+  /* return the fault: */
+  return (EFAULT);
+}
 
 /* our m68k TLB filler: */
 int
-tme_ph1_m68k_tlb_fill(struct tme_m68k_bus_connection *conn_m68k,
-                      struct tme_m68k_tlb *tlb_m68k,
-                      unsigned int function_code,
-                      tme_uint32_t address,
-                      unsigned int cycles)
+_tme_ph1_m68k_tlb_fill(struct tme_m68k_bus_connection *conn_m68k,
+                       struct tme_m68k_tlb *tlb_m68k,
+                       unsigned int function_code,
+                       tme_uint32_t address,
+                       unsigned int cycles)
 {
   struct tme_ph1 *ph1;
   struct tme_bus_tlb *tlb;
   unsigned int function_codes_mask;
   struct tme_bus_tlb tlb_mapping;
   tme_uint32_t context;
-  unsigned short tlb_flags;
   int is_super;
 
   /* recover our ph1: */
@@ -106,8 +341,10 @@ tme_ph1_m68k_tlb_fill(struct tme_m68k_bus_connection *conn_m68k,
        cycles);
 
     /* create the mapping TLB entry: */
-    tlb_mapping.tme_bus_tlb_addr_first = address & (((tme_bus_addr32_t) 0) - (TME_PH1_ROM_PHYS_MASK + 1));
-    tlb_mapping.tme_bus_tlb_addr_last = address | TME_PH1_ROM_PHYS_MASK;
+    tlb_mapping.tme_bus_tlb_addr_first
+      = address & (((tme_bus_addr32_t) 0) - (1 << TME_PH1_ROM_ADDRESS_BITS));
+    tlb_mapping.tme_bus_tlb_addr_last
+      = address | ((1 << TME_PH1_ROM_ADDRESS_BITS) - 1);
     tlb_mapping.tme_bus_tlb_cycles_ok
       = TME_BUS_CYCLE_READ;
 
@@ -144,12 +381,12 @@ tme_ph1_m68k_tlb_fill(struct tme_m68k_bus_connection *conn_m68k,
   }
 
   /* fill this TLB entry from the MMU: */
-  tme_pgmmu_tlb_fill(ph1->tme_ph1_mmu,
-                     tlb,
-                     context,
-                     address,
-                     cycles,
-                     is_super);
+  tme_pg68k_mmu_tlb_fill(ph1->tme_ph1_mmu,
+                         tlb,
+                         context,
+                         address,
+                         cycles,
+                         is_super);
 
   /* TLB entries are good only for the program and data function
      codes for the user or supervisor, but never both, because
@@ -163,15 +400,71 @@ tme_ph1_m68k_tlb_fill(struct tme_m68k_bus_connection *conn_m68k,
   return (TME_OK);
 }
 
+/* our bus TLB filler: */
+int
+_tme_ph1_bus_tlb_fill(struct tme_bus_connection *conn_bus,
+                      struct tme_bus_tlb *tlb,
+                      tme_bus_addr_t address_wider,
+                      unsigned int cycles)
+{
+  static const tme_uint32_t phys_addr_sizes[] = {
+    [TME_PH1_BUS_RAM]  = (1 << TME_PH1_RAM_ADDRESS_BITS),
+    [TME_PH1_BUS_ROM]  = (1 << TME_PH1_ROM_ADDRESS_BITS),
+    [TME_PH1_BUS_OBIO] = (1 << TME_PH1_OBIO_ADDRESS_BITS),
+    [TME_PH1_BUS_VME]  = (1 << TME_PH1_VME_ADDRESS_BITS),
+  };
+  struct tme_ph1 *ph1;
+  tme_bus_addr32_t address;
+  struct tme_ph1_bus_connection *conn_ph1;
+  struct tme_bus_tlb tlb_bus;
+
+  /* recover our ph1: */
+  ph1 = (struct tme_ph1 *) conn_bus->tme_bus_connection.tme_connection_element->tme_element_private;
+
+  /* get the normal-width address: */
+  address = address_wider;
+  assert (address == address_wider);
+
+  /* recover the ph1 internal mainbus connection: */
+  conn_ph1 = (struct tme_ph1_bus_connection *) conn_bus;
+
+  /* The Phaethon 1 has no capability for other bus masters; only the
+     68010 gets to do that, and there is literally no bus arbitration
+     circuitry.  All of the I/O devices live downstream of the MMU,
+     and thus are connected only to their limited set of physical
+     address lines.  */
+  assert(address < phys_addr_sizes[conn_ph1->tme_ph1_bus_connection_which]);
+
+  tme_bus_tlb_initialize(tlb);
+  tlb->tme_bus_tlb_addr_first = 0;
+  tlb->tme_bus_tlb_addr_last
+    = phys_addr_sizes[conn_ph1->tme_ph1_bus_connection_which] - 1;
+  tlb->tme_bus_tlb_cycles_ok
+    = TME_BUS_CYCLE_READ | TME_BUS_CYCLE_WRITE;
+  tlb->tme_bus_tlb_cycle_private = ph1;
+  tlb->tme_bus_tlb_cycle = _tme_ph1_mmu_dma_not_supported;
+
+  tlb_bus.tme_bus_tlb_addr_first = 0;
+  tlb_bus.tme_bus_tlb_addr_last
+    = phys_addr_sizes[conn_ph1->tme_ph1_bus_connection_which] - 1;
+  tlb_bus.tme_bus_tlb_cycles_ok
+    = TME_BUS_CYCLE_READ | TME_BUS_CYCLE_WRITE;
+
+  /* map the filled TLB entry: */
+  tme_bus_tlb_map(tlb, address,  &tlb_bus, address);
+
+  return (TME_OK);
+}
+
 /* this is called to fill in the physical address information
    (and adjust for incomplete address decoding, as needed) for
    the pg68k MMU TLB filler.  */
 static int
-tme_ph1_tlb_fill_mmu(void *_ph1,
-                     struct tme_bus_tlb *tlb,
-                     tme_uint32_t pme,
-                     tme_uint32_t *addressp,
-                     unsigned int cycles)
+_tme_ph1_tlb_fill_phys(void *_ph1,
+                       struct tme_bus_tlb *tlb,
+                       tme_uint32_t pme,
+                       tme_uint32_t *addressp,
+                       unsigned int cycles)
 {
   static const tme_uint32_t phys_addr_masks[] = {
     [TME_PH1_BUS_RAM]  = (1 << TME_PH1_RAM_ADDRESS_BITS) - 1,
@@ -180,10 +473,10 @@ tme_ph1_tlb_fill_mmu(void *_ph1,
     [TME_PH1_BUS_VME]  = (1 << TME_PH1_VME_ADDRESS_BITS) - 1,
   };
   static const tme_bus_fault_handler bus_fault_handlers[] = {
-    [TME_PH1_BUS_RAM]  = tme_ph1_ram_bus_fault_handler,
-    [TME_PH1_BUS_ROM]  = tme_ph1_rom_bus_fault_handler,
-    [TME_PH1_BUS_OBIO] = tme_ph1_obio_bus_fault_handler,
-    [TME_PH1_BUS_VME]  = tme_ph1_vme_bus_fault_handler,
+    [TME_PH1_BUS_RAM]  = _tme_ph1_ram_bus_fault_handler,
+    [TME_PH1_BUS_ROM]  = _tme_ph1_rom_bus_fault_handler,
+    [TME_PH1_BUS_OBIO] = _tme_ph1_obio_bus_fault_handler,
+    [TME_PH1_BUS_VME]  = _tme_ph1_vme_bus_fault_handler,
   };
   struct tme_ph1 *ph1;
   tme_uint32_t physaddr;
@@ -196,7 +489,7 @@ tme_ph1_tlb_fill_mmu(void *_ph1,
 
   /* get the physical page frame and bus type: */
   physaddr = (pme & TME_PGMMU_PME_PFN_MASK) << TME_PH1_PAGE_SIZE_LOG2;
-  bus_type = TME_PH1_PHYS_TO_BUS(address);
+  bus_type = TME_PH1_PHYS_TO_BUS(physaddr);
 
   /* clamp the physical address according to how completely (or not)
      the bus decodes.  */
@@ -223,9 +516,9 @@ tme_ph1_tlb_fill_mmu(void *_ph1,
 
 /* this gets a segmap entry from the MMU: */
 tme_uint16_t
-tme_ph1_mmu_sme_get(struct tme_ph1 *ph1,
-                    tme_uint8_t context,
-                    tme_uint32_t control_address)
+_tme_ph1_mmu_sme_get(struct tme_ph1 *ph1,
+                     tme_uint8_t context,
+                     tme_uint32_t control_address)
 {
   control_address = (control_address >> 4) << 4;
   return (tme_pg68k_mmu_sme_get(ph1->tme_ph1_mmu,
@@ -235,10 +528,10 @@ tme_ph1_mmu_sme_get(struct tme_ph1 *ph1,
 
 /* this sets a segmap entry into the MMU: */
 void
-tme_ph1_mmu_sme_set(struct tme_ph1 *ph1,
-                    tme_uint8_t context,
-                    tme_uint32_t control_address,
-                    tme_uint16_t sme)
+_tme_ph1_mmu_sme_set(struct tme_ph1 *ph1,
+                     tme_uint8_t context,
+                     tme_uint32_t control_address,
+                     tme_uint16_t sme)
 {
   control_address = (control_address >> 4) << 4;
   tme_pg68k_mmu_sme_set(ph1->tme_ph1_mmu,
@@ -249,8 +542,8 @@ tme_ph1_mmu_sme_set(struct tme_ph1 *ph1,
 
 /* this gets a PME from the MMU: */
 tme_uint32_t
-tme_ph1_mmu_pme_get(struct tme_ph1 *ph1,
-                    tme_uint32_t control_address)
+_tme_ph1_mmu_pme_get(struct tme_ph1 *ph1,
+                     tme_uint32_t control_address)
 {
   unsigned int pme_index = (control_address >> 4);
   return (tme_pg68k_mmu_pme_get(ph1->tme_ph1_mmu,
@@ -258,19 +551,13 @@ tme_ph1_mmu_pme_get(struct tme_ph1 *ph1,
 }
 
 /* this sets a PME into the MMU: */
-int
-tme_ph1_mmu_pme_set(struct tme_ph1 *ph1,
-                    tme_uint32_t control_address,
-                    tme_uint32_t pme)
+void
+_tme_ph1_mmu_pme_set(struct tme_ph1 *ph1,
+                     tme_uint32_t control_address,
+                     tme_uint32_t pme)
 {
   unsigned int pme_index = (control_address >> 4);
 #ifndef TME_NO_LOG
-  static const char bus_names[] = {
-    [TME_PH1_BUS_RAM]  = "ram",
-    [TME_PH1_BUS_ROM]  = "rom",
-    [TME_PH1_BUS_OBIO] = "obio",
-    [TME_PH1_BUS_VME]  = "vme",
-  };
   tme_bus_addr32_t physical_address;
   unsigned int bus_type;
 
@@ -287,7 +574,7 @@ tme_ph1_mmu_pme_set(struct tme_ph1 *ph1,
            ph1->tme_ph1_context,
            pme_index,
            pme,
-           bus_names[bus_type],
+           tme_ph1_bus_names[bus_type],
            physical_address));
 #endif /* TME_NO_LOG */
 
@@ -298,7 +585,7 @@ tme_ph1_mmu_pme_set(struct tme_ph1 *ph1,
 
 /* this is called when the context register is set: */
 void
-tme_ph1_mmu_context_set(struct tme_ph1 *ph1)
+_tme_ph1_mmu_context_set(struct tme_ph1 *ph1)
 {
   tme_uint8_t context;
 
@@ -326,8 +613,8 @@ tme_ph1_mmu_context_set(struct tme_ph1 *ph1)
 
 /* this adds a new TLB set: */
 int
-tme_ph1_mmu_tlb_set_add(struct tme_bus_connection *conn_bus_asker,
-                        struct tme_bus_tlb_set_info *tlb_set_info)
+_tme_ph1_mmu_tlb_set_add(struct tme_bus_connection *conn_bus_asker,
+                         struct tme_bus_tlb_set_info *tlb_set_info)
 {
   struct tme_ph1 *ph1;
   int rc;
@@ -351,7 +638,7 @@ tme_ph1_mmu_tlb_set_add(struct tme_bus_connection *conn_bus_asker,
        initialize it: */
     ph1->tme_ph1_m68k_bus_context
       = tlb_set_info->tme_bus_tlb_set_info_bus_context;
-    tme_ph1_mmu_context_set(ph1);
+    _tme_ph1_mmu_context_set(ph1);
 
     /* return the maximum context number.  there are 64 contexts
        when the MMU is enabled.  when the MMU is disabled, all
@@ -366,7 +653,7 @@ tme_ph1_mmu_tlb_set_add(struct tme_bus_connection *conn_bus_asker,
 
 /* this creates a Phaethon 1 MMU: */
 void
-tme_ph1_mmu_new(struct tme_ph1 *ph1)
+_tme_ph1_mmu_new(struct tme_ph1 *ph1)
 {
   struct tme_pg68k_mmu_info mmu_info;
 
@@ -380,15 +667,15 @@ tme_ph1_mmu_new(struct tme_ph1 *ph1)
   mmu_info.tme_pg68k_mmu_info_num_contexts = TME_PH1_NUM_CONTEXTS;
   mmu_info.tme_pg68k_mmu_info_num_pmegs = TME_PH1_NUM_PMEGS;
 
-  mmu_info.tme_pg68k_mmu_info_tlb_fill_private = ph1;
-  mmu_info.tme_pg68k_mmu_info_tlb_fill = tme_ph1_tlb_fill_mmu;
+  mmu_info.tme_pg68k_mmu_info_tlb_fill_phys_private = ph1;
+  mmu_info.tme_pg68k_mmu_info_tlb_fill_phys = _tme_ph1_tlb_fill_phys;
 
   mmu_info.tme_pg68k_mmu_info_invalid_private = ph1;
-  mmu_info.tme_pg68k_mmu_info_invalid = tme_ph1_mmu_invalid;
+  mmu_info.tme_pg68k_mmu_info_invalid = _tme_ph1_mmu_invalid;
 
   mmu_info.tme_pg68k_mmu_info_priv_private = ph1;
-  mmu_info.tme_pg68k_mmu_info_priv = tme_ph1_mmu_priv;
+  mmu_info.tme_pg68k_mmu_info_priv = _tme_ph1_mmu_priv;
 
   mmu_info.tme_pg68k_mmu_info_prot_private = ph1;
-  mmu_info.tme_pg68k_mmu_info_prot = tme_ph1_mmu_prot;
+  mmu_info.tme_pg68k_mmu_info_prot = _tme_ph1_mmu_prot;
 }

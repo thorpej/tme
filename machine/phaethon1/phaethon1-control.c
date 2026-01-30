@@ -40,11 +40,12 @@
 #include <tme/common.h>
 
 /* includes: */
-#include "ph1-impl.h"
+#include <tme/machine/pg68k.h>
+#include "phaethon1-impl.h"
 
 /* macros: */
 
-static int
+static void
 _tme_ph1_dd7seg_update_display(struct tme_ph1 *ph1)
 {
   /* XXX */
@@ -59,7 +60,6 @@ _tme_ph1_control_cycle_handler(void *_ph1,
   struct tme_bus_cycle cycle_resp;
   tme_bus_addr32_t reg, address;
   tme_uint32_t pme;
-  tme_uint16_t saved_reg_val;
   int rc, needs_ipl_check;
   tme_uint8_t old_sysen_value;
 
@@ -129,21 +129,21 @@ _tme_ph1_control_cycle_handler(void *_ph1,
   /* whenever the segmap register is accessed, we need to fill it
      before running the cycle:  */
   if (_TME_PH1_REG_ACCESSED(tme_ph1_segmap0)) {
-    ph1->tme_ph1_segmap0 = tme_ph1_mmu_sme_get(ph1,
-                                               0,
-                                               address);
+    ph1->tme_ph1_segmap0 = _tme_ph1_mmu_sme_get(ph1,
+                                                0,
+                                                address);
   }
   if (_TME_PH1_REG_ACCESSED(tme_ph1_segmap)) {
-    ph1->tme_ph1_segmap = tme_ph1_mmu_sme_get(ph1,
-                                              ph1->tme_ph1_context,
-                                              address);
+    ph1->tme_ph1_segmap = _tme_ph1_mmu_sme_get(ph1,
+                                               ph1->tme_ph1_context,
+                                               address);
   }
 
   /* whenever the pagemap register is accessed, we need to fill it
      before running the cycle:  */
   if (_TME_PH1_REG_ACCESSED(tme_ph1_pagemap_u)
       || _TME_PH1_REG_ACCESSED(tme_ph1_pagemap_l)) {
-    pme = tme_ph1_mmu_pme_get(ph1, address);
+    pme = _tme_ph1_mmu_pme_get(ph1, address);
     ph1->tme_ph1_pagemap_u = (pme >> 16);
     ph1->tme_ph1_pagemap_l = (pme & 0xffff);
   }
@@ -188,38 +188,39 @@ _tme_ph1_control_cycle_handler(void *_ph1,
 
       /* If the MMU enable bit changed, force-reload the context. */
       if ((ph1->tme_ph1_sysen ^ old_sysen_value) & TME_PH1_SYSEN_MMU) {
-        tme_ph1_mmu_context_set(ph1);
+        _tme_ph1_mmu_context_set(ph1);
       }
     }
 
     if (_TME_PH1_REG_ACCESSED(tme_ph1_segmap0)) {
-      tme_ph1_mmu_sme_set(ph1,
-                          0,
-                          address,
-                          ph1->tme_ph1_segmap0);
+      _tme_ph1_mmu_sme_set(ph1,
+                           0,
+                           address,
+                           ph1->tme_ph1_segmap0);
     }
     if (_TME_PH1_REG_ACCESSED(tme_ph1_segmap)) {
-      tme_ph1_mmu_sme_set(ph1,
-                          ph1->tme_ph1_context,
-                          address,
-                          ph1->tme_ph1_segmap);
+      _tme_ph1_mmu_sme_set(ph1,
+                           ph1->tme_ph1_context,
+                           address,
+                           ph1->tme_ph1_segmap);
     }
 
     if (_TME_PH1_REG_ACCESSED(tme_ph1_context)) {
-      ph1->tme_ph1_context &= (TME_PH1_MMU_NUM_CONTEXTS - 1);
-      tme_ph1_mmu_context_set(ph1);
+      ph1->tme_ph1_context &= (TME_PGMMU_NUM_CONTEXTS - 1);
+      _tme_ph1_mmu_context_set(ph1);
     }
 
     if (_TME_PH1_REG_ACCESSED(tme_ph1_pagemap_u)
         || _TME_PH1_REG_ACCESSED(tme_ph1_pagemap_l)) {
       pme = ph1->tme_ph1_pagemap_u;
       pme = (pme << 16) | ph1->tme_ph1_pagemap_l;
-      tme_ph1_mmu_pme_set(ph1, address, pme);
+      _tme_ph1_mmu_pme_set(ph1, address, pme);
     }
 
     if (needs_ipl_check) {
       rc = _tme_ph1_ipl_check(ph1);
       assert(rc == TME_OK);
+      (void)rc;
     }
   }
 

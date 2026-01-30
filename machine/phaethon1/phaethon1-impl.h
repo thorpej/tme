@@ -207,12 +207,25 @@ int   _tme_ph1_m68k_tlb_fill _TME_P((struct tme_m68k_bus_connection *,
                                      struct tme_m68k_tlb *,
                                      unsigned int, tme_uint32_t,
                                      unsigned int));
+int   _tme_ph1_bus_tlb_fill _TME_P((struct tme_bus_connection *,
+                                    struct tme_bus_tlb *,
+                                    tme_bus_addr_t,
+                                    unsigned int));
 int   _tme_ph1_mmu_tlb_set_add _TME_P((struct tme_bus_connection *,
                                        struct tme_bus_tlb_set_info *));
-int   _tme_ph1_mmu_pte_get _TME_P((struct tme_ph1 *, tme_uint32_t,
-                                   tme_uint32_t *));
-int   _tme_ph1_mmu_pte_set _TME_P((struct tme_ph1 *, tme_uint32_t,
+
+tme_uint16_t _tme_ph1_mmu_sme_get _TME_P((struct tme_ph1 *,
+                                          tme_uint8_t,
+                                          tme_uint32_t));
+void  _tme_ph1_mmu_sme_set _TME_P((struct tme_ph1 *,
+                                   tme_uint8_t,
+                                   tme_uint32_t,
+                                   tme_uint16_t));
+
+tme_uint32_t _tme_ph1_mmu_pme_get _TME_P((struct tme_ph1 *, tme_uint32_t));
+void  _tme_ph1_mmu_pme_set _TME_P((struct tme_ph1 *, tme_uint32_t,
                                    tme_uint32_t));
+
 void  _tme_ph1_mmu_context_set _TME_P((struct tme_ph1 *));
 
 int   _tme_ph1_control_cycle_handler _TME_P((void *,

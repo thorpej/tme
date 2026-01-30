@@ -69,6 +69,16 @@
 #define TME_PGMMU_TLB_SYSTEM    (1 << 0)
 #define TME_PGMMU_TLB_USER      (1 << 1)
 
+/* pg68k MMU context register */
+#define TME_PGMMU_NUM_CONTEXTS  (64)
+
+/* pg68k MMU bus error register bits  */
+#define TME_PGMMU_BERR_INVALID  TME_BIT(0)  /* invalid translation */
+#define TME_PGMMU_BERR_PROT     TME_BIT(1)  /* protection error (ro page) */
+#define TME_PGMMU_BERR_PRIV     TME_BIT(2)  /* privilege error (ko page) */
+#define TME_PGMMU_BERR_TIMEOUT  TME_BIT(4)  /* bus cycle watchdog timed out */
+#define TME_PGMMU_BERR_VME      TME_BIT(5)  /* VMEbus /BERR asserted */
+
 /* structures: */
 
 /* the parameters for a pg68k MMU: */
@@ -97,12 +107,12 @@ struct tme_pg68k_mmu_info {
   unsigned int tme_pg68k_mmu_info_num_pmegs;
 
   /* a TLB filler: */
-  void *tme_pg68k_mmu_info_tlb_fill_private;
-  int (*tme_pg68k_mmu_info_tlb_fill) _TME_P((void *,
-                                             struct tme_bus_tlb *,
-                                             tme_uint32_t *, /* PME */
-                                             tme_uint32_t *, /* phys addr out */
-                                             unsigned int)); /* r/w cycles */
+  void *tme_pg68k_mmu_info_tlb_fill_phys_private;
+  int (*tme_pg68k_mmu_info_tlb_fill_phys) _TME_P((void *,
+                                                  struct tme_bus_tlb *,
+                                                  tme_uint32_t,  /* PME */
+                                                  tme_uint32_t *,/* phys out */
+                                                  unsigned int));/* r/w */
 
   /* the page-invalid cycle handler: */
   void *tme_pg68k_mmu_info_invalid_private;
@@ -127,6 +137,12 @@ void tme_pg68k_mmu_pme_set _TME_P((void *,
                                    tme_uint32_t));
 tme_uint32_t tme_pg68k_mmu_pme_get _TME_P((void *,
                                            unsigned int));
+
+int tme_pg68k_mmu_lookup _TME_P((void *,
+                                 tme_uint8_t,
+                                 tme_uint32_t,
+                                 unsigned int *,
+                                 unsigned int *));
 
 void tme_pg68k_mmu_sme_set _TME_P((void *,
                                    tme_uint8_t,

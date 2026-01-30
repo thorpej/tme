@@ -172,7 +172,7 @@ am__installdirs = "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(examplesdir)"
 LTLIBRARIES = $(pkglib_LTLIBRARIES)
 tme_machine_phaethon1_la_DEPENDENCIES =  \
 	$(top_builddir)/libtme/libtme.la \
-	../sun/libtme-machine-pg68k.la
+	../pg68k/libtme-machine-pg68k.la
 am_tme_machine_phaethon1_la_OBJECTS = phaethon1-mainbus.lo \
 	phaethon1-mmu.lo phaethon1-control.lo
 tme_machine_phaethon1_la_OBJECTS =  \
@@ -280,6 +280,8 @@ ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GREP = @GREP@
+GTK_CFLAGS = @GTK_CFLAGS@
+GTK_LIBS = @GTK_LIBS@
 INCLTDL = @INCLTDL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -325,6 +327,9 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -422,7 +427,7 @@ tme_machine_phaethon1_la_SOURCES = \
 
 tme_machine_phaethon1_la_LDFLAGS = -module -version-info 0:0:0
 tme_machine_phaethon1_la_LIBADD = $(top_builddir)/libtme/libtme.la \
-	../sun/libtme-machine-pg68k.la
+	../pg68k/libtme-machine-pg68k.la
 
 examplesdir = $(datadir)/examples/tme
 examples_DATA = PHAETHON1

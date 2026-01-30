@@ -13,7 +13,7 @@ tme_machine_phaethon1_la_SOURCES =	\
 	phaethon1-impl.h
 tme_machine_phaethon1_la_LDFLAGS = -module -version-info 0:0:0
 tme_machine_phaethon1_la_LIBADD = $(top_builddir)/libtme/libtme.la \
-	../sun/libtme-machine-pg68k.la
+	../pg68k/libtme-machine-pg68k.la
 
 examplesdir = $(datadir)/examples/tme
 examples_DATA = PHAETHON1

@@ -40,7 +40,7 @@
 #include <tme/common.h>
 
 /* includes: */
-#include "sun2-impl.h"
+#include "phaethon1-impl.h"
 
 /* this possibly updates that the interrupt priority level driven to the CPU: */
 int
@@ -147,7 +147,7 @@ _tme_ph1_bus_signal(struct tme_bus_connection *conn_bus_raiser,
               : 0));
 
       /* possibly update the ipl being driven to the CPU: */
-      return (_tme_sun2_ipl_check(sun2));
+      return (_tme_ph1_ipl_check(ph1));
     }
   }
 
@@ -226,36 +226,40 @@ _tme_ph1_command(struct tme_element *element,
   }
 
   /* reset the CPU: */
-  (*ph1->tme_ph1_m68k->tme_m68k_bus_connection.tme_bus_signal)
-    (&ph1->tme_sun2_m68k->tme_m68k_bus_connection,
-     TME_BUS_SIGNAL_RESET
-     | TME_BUS_SIGNAL_LEVEL_NEGATED
-     | TME_BUS_SIGNAL_EDGE);
+  if (do_reset) {
+    (*ph1->tme_ph1_m68k->tme_m68k_bus_connection.tme_bus_signal)
+      (&ph1->tme_ph1_m68k->tme_m68k_bus_connection,
+       TME_BUS_SIGNAL_RESET
+       | TME_BUS_SIGNAL_LEVEL_NEGATED
+       | TME_BUS_SIGNAL_EDGE);
 
-  /* reset all busses: */
-  (*ph1->tme_ph1_ram->tme_bus_signal)
-    ph1->tme_ph1_ram,
-    TME_BUS_SIGNAL_RESET
-    | TME_BUS_SIGNAL_LEVEL_NEGATED
-    | TME_BUS_SIGNAL_EDGE);
+    /* reset all busses: */
+    (*ph1->tme_ph1_ram->tme_bus_signal)
+      (ph1->tme_ph1_ram,
+       TME_BUS_SIGNAL_RESET
+       | TME_BUS_SIGNAL_LEVEL_NEGATED
+       | TME_BUS_SIGNAL_EDGE);
 
-  (*ph1->tme_ph1_rom->tme_bus_signal)
-    ph1->tme_ph1_rom,
-    TME_BUS_SIGNAL_RESET
-    | TME_BUS_SIGNAL_LEVEL_NEGATED
-    | TME_BUS_SIGNAL_EDGE);
+    (*ph1->tme_ph1_rom->tme_bus_signal)
+      (ph1->tme_ph1_rom,
+       TME_BUS_SIGNAL_RESET
+       | TME_BUS_SIGNAL_LEVEL_NEGATED
+       | TME_BUS_SIGNAL_EDGE);
 
-  (*ph1->tme_ph1_obio->tme_bus_signal)
-    ph1->tme_ph1_obio,
-    TME_BUS_SIGNAL_RESET
-    | TME_BUS_SIGNAL_LEVEL_NEGATED
-    | TME_BUS_SIGNAL_EDGE);
+    (*ph1->tme_ph1_obio->tme_bus_signal)
+      (ph1->tme_ph1_obio,
+       TME_BUS_SIGNAL_RESET
+       | TME_BUS_SIGNAL_LEVEL_NEGATED
+       | TME_BUS_SIGNAL_EDGE);
 
-  (*ph1->tme_ph1_vme->tme_bus_signal)
-    ph1->tme_ph1_vme,
-    TME_BUS_SIGNAL_RESET
-    | TME_BUS_SIGNAL_LEVEL_NEGATED
-    | TME_BUS_SIGNAL_EDGE);
+    (*ph1->tme_ph1_vme->tme_bus_signal)
+      (ph1->tme_ph1_vme,
+       TME_BUS_SIGNAL_RESET
+       | TME_BUS_SIGNAL_LEVEL_NEGATED
+       | TME_BUS_SIGNAL_EDGE);
+  }
+
+  return (TME_OK);
 }
 
 /* the connection scorer: */
@@ -336,6 +340,7 @@ _tme_ph1_connection_make(struct tme_connection *conn,
 
   default:  assert(FALSE);
   }
+  return (TME_OK);
 }
 
 /* this breaks a connection: */
@@ -367,7 +372,7 @@ _tme_ph1_connections_new(struct tme_element *element,
   /* if we have no arguments and don't have a CPU yet,
      we can take an m68k connection:  */
   if (args[1] == NULL
-      && sun2->tme_sun2_m68k == NULL) {
+      && ph1->tme_ph1_m68k == NULL) {
 
     /* create our side of an m68k bus connection: */
     conn_m68k = tme_new0(struct tme_m68k_bus_connection, 1);
