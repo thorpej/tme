@@ -7,6 +7,7 @@ tmeicincludedir = $(pkgincludedir)/ic
 tmeicinclude_HEADERS = m68k.h \
 	am9513.h \
 	z8530.h \
+	tl16c550.h \
 	mm58167.h \
 	isil7170.h \
 	i825x6.h \
