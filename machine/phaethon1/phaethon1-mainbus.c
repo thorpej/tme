@@ -41,6 +41,7 @@
 
 /* includes: */
 #include "phaethon1-impl.h"
+#include <tme/ic/tl16c550.h>
 
 /* this possibly updates that the interrupt priority level driven to the CPU: */
 int
