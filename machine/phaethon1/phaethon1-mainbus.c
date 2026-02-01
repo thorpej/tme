@@ -557,3 +557,22 @@ TME_ELEMENT_NEW_DECL(tme_machine_ph1) {
 
   return (TME_OK);
 }
+
+/* this creates a Phaethon1 "com" UART instance: */
+TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,com) {
+  struct tme_tl16c550_socket socket;
+  char *sub_args[2];
+
+  /* create the tl16c550 socket: */
+  socket.tme_tl16c550_socket_version = TME_TL16C550_SOCKET_0;
+  socket.tme_tl16c550_socket_addr_shift = 1;
+  socket.tme_tl16c550_socket_port_least_lane = 1; /* D15-D8 */
+
+  /* create the tl16c550: */
+  sub_args[0] = "tme/ic/tl16c550";
+  sub_args[1] = NULL;
+  return (tme_element_new(element,
+                          (const char * const *) sub_args,
+                          &socket,
+                          _output));
+}
