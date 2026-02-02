@@ -678,4 +678,6 @@ _tme_ph1_mmu_new(struct tme_ph1 *ph1)
 
   mmu_info.tme_pg68k_mmu_info_prot_private = ph1;
   mmu_info.tme_pg68k_mmu_info_prot = _tme_ph1_mmu_prot;
+
+  ph1->tme_ph1_mmu = tme_pg68k_mmu_new(&mmu_info);
 }
