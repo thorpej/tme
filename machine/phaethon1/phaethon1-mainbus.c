@@ -490,7 +490,7 @@ _tme_ph1_connections_new(struct tme_element *element,
 }
 
 /* this creates a new Phaethon 1 element: */
-TME_ELEMENT_NEW_DECL(tme_machine_ph1) {
+TME_ELEMENT_NEW_DECL(tme_machine_phaethon1) {
   int usage;
   struct tme_ph1 *ph1;
   int arg_i;
