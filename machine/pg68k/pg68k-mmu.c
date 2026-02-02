@@ -242,7 +242,7 @@ tme_pg68k_mmu_segment_invalidate(struct tme_pg68k_mmu *mmu,
   struct tme_token *token;
 
   token = mmu->tme_pg68k_mmu_segmap_tlb_tokens[sme_index];
-  mmu->tme_pg68k_mmu_segmap_tlb_tokens = NULL;
+  mmu->tme_pg68k_mmu_segmap_tlb_tokens[sme_index] = NULL;
   if (token != NULL) {
     tme_token_invalidate(token);
   }
