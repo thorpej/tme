@@ -65,7 +65,6 @@ _tme_ph1_bus_fault_log(struct tme_ph1 *ph1,
   tme_bus_addr32_t physical_address;
   unsigned int sme_index;
   unsigned int pme_index;
-  int bus_type;
   int rc;
 
   /* recover the virtual address used: */
@@ -81,13 +80,12 @@ _tme_ph1_bus_fault_log(struct tme_ph1 *ph1,
                             &pme_index);
   assert(rc == TME_OK);
   pme = tme_pg68k_mmu_pme_get(ph1->tme_ph1_mmu,
-                              pme_index));
+                              pme_index);
 
   /* form the physical address and get the bus type. */
   physical_address = ((pme & TME_PGMMU_PME_PFN_MASK)
                       << TME_PH1_PAGE_SIZE_LOG2)
                    | (virtual_address & (TME_PH1_PAGE_SIZE - 1));
-  bus_type = TME_PH1_PHYS_TO_BUS(physical_address);
 
   /* log this bus error: */
   tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
@@ -561,17 +559,13 @@ _tme_ph1_mmu_pme_set(struct tme_ph1 *ph1,
   tme_bus_addr32_t physical_address;
   unsigned int bus_type;
 
-  /* this silences gcc -Wuninitialized: */
-  bus_name = NULL;
-
   /* log this setting: */
   physical_address = ((pme & TME_PGMMU_PME_PFN_MASK) << TME_PH1_PAGE_SIZE_LOG2);
-  physical_address &= ~(TME_PH1_PHYS_TO_BUS_MASK << TME_PH1_PHYS_TO_BUS_SHIFT)
+  physical_address &= ~(TME_PH1_PHYS_TO_BUS_MASK << TME_PH1_PHYS_TO_BUS_SHIFT);
   bus_type = TME_PH1_PHYS_TO_BUS(physical_address);
   tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
           (TME_PH1_LOG_HANDLE(ph1),
            _("pte_set: PGMAP[%u] <- 0x%08x (%s 0x%08x)"),
-           ph1->tme_ph1_context,
            pme_index,
            pme,
            tme_ph1_bus_names[bus_type],
