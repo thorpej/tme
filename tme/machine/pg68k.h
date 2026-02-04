@@ -127,6 +127,27 @@ struct tme_pg68k_mmu_info {
   tme_bus_cycle_handler tme_pg68k_mmu_info_prot;
 };
 
+/* IC socket for the timer built in to the 68K Playground I/O
+   controller.  */
+#define TME_PG68K_TIMER_SOCKET_0  (0)
+struct tme_pg68k_timer_socket {
+
+  /* the version number of this structure: */
+  unsigned int tme_pg68k_timer_socket_version;
+
+  /* the address increment: */
+  tme_bus_addr32_t tme_pg68k_timer_socket_addr_shift;
+
+  /* the system bus byte late the chip is wired to: */
+  unsigned int tme_pg68k_timer_socket_port_least_lane;
+
+  /* the basic clock in Hz provided to the chip: */
+  unsigned int tme_pg68k_timer_socket_clock_basic;
+
+  /* the bus signal connected to the interrupt output: */
+  unsigned int tme_pg68k_timer_socket_int_signal;
+};
+
 /* prototypes: */
 
 /* MMU support: */
@@ -163,5 +184,11 @@ void tme_pg68k_mmu_tlbs_invalidate _TME_P((void *));
 
 int tme_pg68k_mmu_tlb_set_add _TME_P((void *,
                                       struct tme_bus_tlb_set_info *));
+
+/* timer supprt: */
+int tme_pg68k_pgtimer(struct tme_element *,
+                      const struct tme_pg68k_timer_socket *,
+                      char **);
+
 
 #endif /* !_TME_MACHINE_PG68K_H */
