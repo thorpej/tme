@@ -32,6 +32,7 @@ vme0 at mainbus0 vme: tme/generic/bus size 64MB
 ## The on-board I/O devices:
 com0 at obio0 addr 0x0000 ipl 5: tme/machine/phaethon1/com
 com1 at obio0 addr 0x0100 ipl 5: tme/machine/phaethon1/com
+timer0 at obio0 addr 0x0200: tme/machine/phaethon1/timer
 
 ## Console device is on UART 0:
 ##

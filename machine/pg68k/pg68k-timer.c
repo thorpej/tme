@@ -166,7 +166,7 @@ _tme_pgtimer_callout(struct tme_pgtimer *t)
     /* unlock our mutex: */
     tme_mutex_unlock(&t->tme_pgtimer_mutex);
 
-    /* call out the bus interrupt signal edge: */
+    /* call out the bus interrupt signal: */
     rc = (*conn_bus->tme_bus_signal)
       (conn_bus,
        t->tme_pgtimer_int_signal
@@ -348,8 +348,9 @@ _tme_pgtimer_bus_cycle(void *_pgtimer, struct tme_bus_cycle *cycle_init)
 
     case PGTIMER_REG_CSR:
       /* The ENAB bit is the only writable one, and we only need
-         to take action if it changes, and changing it by definition
-         clears the other bit in the register (INT).  */
+         to take action if it changes. changing it clears the other
+         bit in the register (INT).  */
+
       value &= CSR_ENAB;
       if ((value ^ t->tme_pgtimer_reg_csr) & CSR_ENAB) {
         /* if enabling, recompute the timer interval. */
@@ -511,9 +512,9 @@ _tme_pgtimer_signal(void *_pgtimer,
 
 /* the new pgtimer function: */
 int
-tme_pg68k_pgtimer(struct tme_element *element,
-                  const struct tme_pg68k_timer_socket *socket,
-                  char **_output)
+tme_pg68k_timer(struct tme_element *element,
+                const struct tme_pg68k_timer_socket *socket,
+                char **_output)
 {
   struct tme_pgtimer *t;
   struct tme_pg68k_timer_socket socket_real;

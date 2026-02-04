@@ -186,9 +186,9 @@ int tme_pg68k_mmu_tlb_set_add _TME_P((void *,
                                       struct tme_bus_tlb_set_info *));
 
 /* timer supprt: */
-int tme_pg68k_pgtimer(struct tme_element *,
-                      const struct tme_pg68k_timer_socket *,
-                      char **);
+int tme_pg68k_timer(struct tme_element *,
+                    const struct tme_pg68k_timer_socket *,
+                    char **);
 
 
 #endif /* !_TME_MACHINE_PG68K_H */

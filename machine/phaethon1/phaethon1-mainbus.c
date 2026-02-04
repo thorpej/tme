@@ -41,6 +41,7 @@
 
 /* includes: */
 #include "phaethon1-impl.h"
+#include <tme/machine/pg68k.h>
 #include <tme/ic/tl16c550.h>
 
 /* this possibly updates that the interrupt priority level driven to the CPU: */
@@ -576,4 +577,19 @@ TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,com) {
                           (const char * const *) sub_args,
                           &socket,
                           _output));
+}
+
+/* this creates a Phaethon1 "timer" instance: */
+TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,timer)
+{
+	struct tme_pg68k_timer_socket socket;
+
+  /* create the pgtimer socket: */
+  socket.tme_pg68k_timer_socket_version = TME_PG68K_TIMER_SOCKET_0;
+  socket.tme_pg68k_timer_socket_addr_shift = 1;
+  socket.tme_pg68k_timer_socket_port_least_lane = 1;		/* D15-D8 */
+  socket.tme_pg68k_timer_socket_clock_basic = 10000000; /* 10MHz */
+  socket.tme_pg68k_timer_socket_int_signal = TME_BUS_SIGNAL_INT(6);
+
+	return (tme_pg68k_timer(element, &socket, _output));
 }
