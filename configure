@@ -20528,7 +20528,7 @@ fi
 ac_config_commands="$ac_config_commands default-1"
 
 
-ac_config_files="$ac_config_files Makefile tme/Makefile tme/ic/Makefile tme/machine/Makefile tme/generic/Makefile tme/scsi/Makefile tme/host/Makefile tme/bus/Makefile libtme/Makefile libtme/host/Makefile libtme/host/x86/Makefile ic/Makefile ic/m68k/Makefile ic/ieee754/Makefile ic/sparc/Makefile ic/stp22xx/Makefile machine/Makefile machine/pg68k/Makefile machine/phaethon1/Makefile machine/sun/Makefile machine/sun2/Makefile machine/sun3/Makefile machine/sun4/Makefile machine/sun4u/Makefile host/Makefile host/posix/Makefile host/bsd/Makefile host/gtk/Makefile bus/Makefile bus/multibus/Makefile bus/sbus/Makefile serial/Makefile scsi/Makefile generic/Makefile tmesh/Makefile tools/Makefile"
+ac_config_files="$ac_config_files Makefile tme/Makefile tme/ic/Makefile tme/machine/Makefile tme/generic/Makefile tme/ata/Makefile tme/scsi/Makefile tme/host/Makefile tme/bus/Makefile libtme/Makefile libtme/host/Makefile libtme/host/x86/Makefile ic/Makefile ic/m68k/Makefile ic/ieee754/Makefile ic/sparc/Makefile ic/stp22xx/Makefile machine/Makefile machine/pg68k/Makefile machine/phaethon1/Makefile machine/sun/Makefile machine/sun2/Makefile machine/sun3/Makefile machine/sun4/Makefile machine/sun4u/Makefile host/Makefile host/posix/Makefile host/bsd/Makefile host/gtk/Makefile bus/Makefile bus/multibus/Makefile bus/sbus/Makefile serial/Makefile ata/Makefile scsi/Makefile generic/Makefile tmesh/Makefile tools/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -21600,6 +21600,7 @@ do
     "tme/ic/Makefile") CONFIG_FILES="$CONFIG_FILES tme/ic/Makefile" ;;
     "tme/machine/Makefile") CONFIG_FILES="$CONFIG_FILES tme/machine/Makefile" ;;
     "tme/generic/Makefile") CONFIG_FILES="$CONFIG_FILES tme/generic/Makefile" ;;
+    "tme/ata/Makefile") CONFIG_FILES="$CONFIG_FILES tme/ata/Makefile" ;;
     "tme/scsi/Makefile") CONFIG_FILES="$CONFIG_FILES tme/scsi/Makefile" ;;
     "tme/host/Makefile") CONFIG_FILES="$CONFIG_FILES tme/host/Makefile" ;;
     "tme/bus/Makefile") CONFIG_FILES="$CONFIG_FILES tme/bus/Makefile" ;;
@@ -21627,6 +21628,7 @@ do
     "bus/multibus/Makefile") CONFIG_FILES="$CONFIG_FILES bus/multibus/Makefile" ;;
     "bus/sbus/Makefile") CONFIG_FILES="$CONFIG_FILES bus/sbus/Makefile" ;;
     "serial/Makefile") CONFIG_FILES="$CONFIG_FILES serial/Makefile" ;;
+    "ata/Makefile") CONFIG_FILES="$CONFIG_FILES ata/Makefile" ;;
     "scsi/Makefile") CONFIG_FILES="$CONFIG_FILES scsi/Makefile" ;;
     "generic/Makefile") CONFIG_FILES="$CONFIG_FILES generic/Makefile" ;;
     "tmesh/Makefile") CONFIG_FILES="$CONFIG_FILES tmesh/Makefile" ;;

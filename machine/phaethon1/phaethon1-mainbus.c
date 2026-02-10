@@ -42,6 +42,7 @@
 /* includes: */
 #include "phaethon1-impl.h"
 #include <tme/machine/pg68k.h>
+#include <tme/ata/ata-controller.h>
 #include <tme/ic/tl16c550.h>
 
 /* this possibly updates that the interrupt priority level driven to the CPU: */
@@ -592,4 +593,24 @@ TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,timer)
   socket.tme_pg68k_timer_socket_int_signal = TME_BUS_SIGNAL_INT(6);
 
 	return (tme_pg68k_timer(element, &socket, _output));
+}
+
+/* this creates a Phaethon1 "ata" instance: */
+TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,ata)
+{
+	struct tme_ata_controller_socket socket;
+  char *sub_args[2];
+
+  /* create the ATA controller socket: */
+  socket.tme_ata_controller_socket_version = TME_ATA_CONTROLLER_SOCKET_0;
+  socket.tme_ata_controller_socket_addr_shift = 1;
+  socket.tme_ata_controller_socket_port_least_lane = 1;				/* D15-D8 */
+
+  /* create the ata controller: */
+  sub_args[0] = "tme/ata/controller";
+  sub_args[1] = NULL;
+  return (tme_element_new(element,
+                          (const char * const *) sub_args,
+                          &socket,
+                          _output));
 }

@@ -145,10 +145,10 @@
 #define TME_ACE_CALLOUT_CHECK		(0)
 #define TME_ACE_CALLOUT_RUNNING	TME_BIT(0)
 #define TME_ACE_CALLOUTS_MASK		(-2)
-#define  TME_ACE_CALLOUT_CTRL		TME_BIT(1)
+#define  TME_ACE_CALLOUT_CTRL   TME_BIT(1)
 #define  TME_ACE_CALLOUT_CONFIG	TME_BIT(2)
-#define  TME_ACE_CALLOUT_READ		TME_BIT(3)
-#define	 TME_ACE_CALLOUT_INT		TME_BIT(4)
+#define  TME_ACE_CALLOUT_READ   TME_BIT(3)
+#define	 TME_ACE_CALLOUT_INT    TME_BIT(4)
 
 #define TME_ACE_LOG_HANDLE(a) (&(a)->tme_ace_element->tme_element_log_handle)
 

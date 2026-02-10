@@ -900,6 +900,7 @@ AC_CONFIG_FILES([Makefile
 	  tme/ic/Makefile
 	  tme/machine/Makefile
 	  tme/generic/Makefile
+	  tme/ata/Makefile
 	  tme/scsi/Makefile
 	  tme/host/Makefile
 	  tme/bus/Makefile
@@ -927,6 +928,7 @@ AC_CONFIG_FILES([Makefile
           bus/multibus/Makefile
           bus/sbus/Makefile
           serial/Makefile
+          ata/Makefile
           scsi/Makefile
           generic/Makefile
 	  tmesh/Makefile

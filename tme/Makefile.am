@@ -3,7 +3,7 @@
 
 AUTOMAKE_OPTIONS = 1.4 gnu
 
-SUBDIRS = generic ic machine scsi host bus
+SUBDIRS = generic ic machine ata scsi host bus
 
 CLEANFILES = *.la
 DISTCLEANFILES = recode-host.h
