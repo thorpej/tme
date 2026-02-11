@@ -10,7 +10,13 @@
 
 /* includes: */
 #include <tme/generic/bus-device.h>
+#include <tme/generic/disk.h>
 #include <tme/ata/ata-controller.h>
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#else  /* HAVE_STDARG_H */
+#include <varargs.h>
+#endif /* HAVE_STDARG_H */
 
 /* macros: */
 
@@ -368,6 +374,10 @@ struct tme_ata {
 
   /* our callout flags. */
   int tme_ata_callout_flags;
+
+  /* our interrupt state. */
+  int tme_ata_int_pending;
+  int tme_ata_int_asserted;
 };
 
 /* maps a command block register to the per-drive instance. */
@@ -449,14 +459,14 @@ _tme_ata_data_transfer_init(struct tme_ata *ata,
 }
 
 /* clear in-flight I/O state. */
-static voidd
+static void
 _tme_ata_data_transfer_fini(struct tme_ata *ata,
                             int drive)
 {
   ata->tme_ata_io_flags[drive] &= ~(TME_ATA_IO_READ | TME_ATA_IO_WRITE);
   ata->tme_ata_drv_regs[drive][drv_reg_status] &= ~WDCS_DRQ;
 
-  tme->tme_ata_sector_buffers[drive].sector_buffer_disk_buffer = NULL;
+  ata->tme_ata_sector_buffers[drive].sector_buffer_disk_buffer = NULL;
 }
 
 /* copy a string into an IDENTIFY buffer field, padding with spaces. */
@@ -547,7 +557,6 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
   tme_uint32_t num_cylinders;
   tme_uint32_t num_heads;
   tme_uint32_t num_sectors;
-  tme_uint32_t num_lbas;
   tme_uint32_t cylinder;
   tme_uint32_t head;
   tme_uint32_t sector;
@@ -564,8 +573,8 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
 
   sb = &ata->tme_ata_sector_buffers[drive];
 
-  if (ata->tme_ata_drv_regs[drive][drv_reg_sdh] & WDSD_LBA) {
-    lba =              ata->tme_ata_drv_regs[drive][drv_reg_sdh] & 0xf;
+  if (ata->tme_ata_reg_sdh & WDSD_LBA) {
+    lba =              ata->tme_ata_reg_sdh & 0xf;
     lba = (lba << 8) | ata->tme_ata_drv_regs[drive][drv_reg_cyl_hi];
     lba = (lba << 8) | ata->tme_ata_drv_regs[drive][drv_reg_cyl_lo];
     lba = (lba << 8) | ata->tme_ata_drv_regs[drive][drv_reg_sector];
@@ -577,7 +586,7 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
     cylinder =                   ata->tme_ata_drv_regs[drive][drv_reg_cyl_lo];
     cylinder = (cylinder << 8) | ata->tme_ata_drv_regs[drive][drv_reg_cyl_hi];
 
-    head = ata->tme_ata_drv_regs[drive][drv_reg_sdh] & 0xf;
+    head = ata->tme_ata_reg_sdh & 0xf;
 
     sector = ata->tme_ata_drv_regs[drive][drv_reg_sector] - 1;
 
@@ -619,7 +628,7 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
           (other_conn_disk,
            &off,
            len,
-           &sb->sector_buffer_disk_buffer));
+           (const tme_uint8_t **)&sb->sector_buffer_disk_buffer));
   } else {
     /* if this disk is read-only: */
     if (other_conn_disk->tme_disk_connection_write == NULL) {
@@ -654,6 +663,8 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
                               sector_count,
                               ((rw == WDCC_READ)
                                ? TME_ATA_IO_READ : TME_ATA_IO_WRITE));
+
+  return (TRUE);
 }
 
 /* SET FEATURES command: */
@@ -661,7 +672,7 @@ static void
 _tme_ata_command_set_features(struct tme_ata *ata, int drive)
 {
   /* dispatch on the contents of the features register: */
-  switch (ata->tme_ata_drv_regs[drive][drv_reg_features]) {
+  switch (ata->tme_ata_reg_features) {
   case WDSF_8BIT_PIO_EN:
     ata->tme_ata_io_flags[drive] |= TME_ATA_IO_8BIT;
     break;
@@ -708,7 +719,6 @@ _tme_ata_command(struct tme_ata *ata)
 
   /* cancel any in-flight I/O. */
   _tme_ata_data_transfer_fini(ata, drive);
-  tme->tme_ata_sector_buffers[drive].sector_buffer_disk_buffer = NULL;
 
   /* assume an interrupt at the end of the command. */
   assert_interrupt = TRUE;
@@ -763,7 +773,7 @@ _tme_ata_command(struct tme_ata *ata)
 
   if (assert_interrupt) {
     ata->tme_ata_int_pending = TRUE;
-    ata->tme_ata_callout_flags |= TME_ATA_CALLOUT_INTERRUPT;
+    ata->tme_ata_callout_flags |= TME_ATA_CALLOUT_INT;
   }
 
   /* drive is no longer busy. */
@@ -775,8 +785,11 @@ static void
 _tme_ata_callout(struct tme_ata *ata,
                  int new_callouts)
 {
+  struct tme_bus_connection *conn_bus;
   int callouts;
   int later_callouts;
+  int new_int_asserted;
+  int rc;
 
   /* add in any new callouts: */
   ata->tme_ata_callout_flags |= new_callouts;
@@ -793,6 +806,9 @@ _tme_ata_callout(struct tme_ata *ata,
   /* assume we won't need any later callouts: */
   later_callouts = 0;
 
+  /* interrupt defaults to unchanged: */
+  new_int_asserted = ata->tme_ata_int_asserted;
+
   /* loop while callouts are needed: */
   for (;;) {
 
@@ -805,7 +821,50 @@ _tme_ata_callout(struct tme_ata *ata,
     ata->tme_ata_callout_flags &= ~TME_ATA_CALLOUTS_MASK;
 
     if (callouts & TME_ATA_CALLOUT_COMMAND) {
+      /* go process the command.  this may schedule additional callouts. */
       _tme_ata_command(ata);
+    }
+
+    if (callouts & TME_ATA_CALLOUT_INT) {
+      new_int_asserted = ata->tme_ata_int_pending
+        && ((ata->tme_ata_reg_aux_control & WDCTL_IDS) == 0);
+    }
+  }
+
+  /* if the interrupt change, we need to go call it out: */
+  if (new_int_asserted != ata->tme_ata_int_asserted) {
+
+    /* unlock our mutex: */
+    tme_mutex_unlock(&ata->tme_ata_mutex);
+
+    /* get our bus connection: */
+    conn_bus
+        = tme_memory_atomic_pointer_read(struct tme_bus_connection *,
+            ata->tme_ata_device.tme_bus_device_connection,
+            &ata->tme_ata_device.tme_bus_device_connection_rwlock);
+
+    /* call out the bus interrupt signal edge: */
+    rc = (*conn_bus->tme_bus_signal)
+      (conn_bus,
+       TME_BUS_SIGNAL_INT_UNSPEC
+       | TME_BUS_SIGNAL_EDGE
+       | (new_int_asserted
+          ? TME_BUS_SIGNAL_LEVEL_ASSERTED
+          : TME_BUS_SIGNAL_LEVEL_NEGATED));
+
+    /* lock our mutex: */
+    tme_mutex_lock(&ata->tme_ata_mutex);
+
+    /* if this callout was successful, note the new state of the
+       interrupt signal: */
+    if (rc == TME_OK) {
+      ata->tme_ata_int_asserted = new_int_asserted;
+    }
+
+    /* otherwise, remember that at some later time this callout
+       should be attempted again: */
+    else {
+      later_callouts |= TME_ATA_CALLOUT_INT;
     }
   }
 
@@ -899,7 +958,7 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
 
         /* decrement the residual count and update I/O status. */
         sb->sector_buffer_resid--;
-        if (sector_buffer_resid == 0) {
+        if (sb->sector_buffer_resid == 0) {
           _tme_ata_data_transfer_fini(ata, drive);
         }
       }
@@ -932,7 +991,7 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
         /* decrement the residual count, maybe re-fill the sector buffer,
            and update I/O status. */
         sb->sector_buffer_resid--;
-        if (sector_buffer_resid == 0) {
+        if (sb->sector_buffer_resid == 0) {
           _tme_ata_data_transfer_fini(ata, drive);
         } else if (sb->sector_buffer_disk_buffer != NULL) {
 
@@ -1035,11 +1094,6 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
     tme_bus_cycle_xfer(cycle_init, &cycle_resp);
     value = buffer;
 
-    /* log this write: */
-    tme_log(TME_ATA_LOG_HANDLE(ata), 100000, TME_OK,
-            (TME_ATA_LOG_HANDLE(ata),
-      "REG %d <- 0x%02x", reg, value));
-
     switch (reg) {
 
     case wd_data:
@@ -1104,6 +1158,8 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
   else {
     assert(cycle_init->tme_bus_cycle_type == TME_BUS_CYCLE_READ);
 
+    value = 0xff;  /* XXX gcc -Werror=maybe-uninitialized confusion */
+
     switch (reg) {
 
     case wd_data:
@@ -1130,17 +1186,19 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
           ata->tme_ata_int_pending = FALSE;
           new_callouts |= TME_ATA_CALLOUT_INT;
         }
-      } else if (ata->tme_ata_reg_aux_control & WDCTL_RST) {
+      }
+      else if (ata->tme_ata_reg_aux_control & WDCTL_RST) {
         /* N.B. in the description of the reset response in the ATA-1
            specification, it says that BSY shall be set in the status
            register when SRST is asserted.  returning the high-z value
            here satisfies that requirement. */
         value = 0xff;
-      } else if (drv_reg == drv_reg_status) {
-        /* if the drive isn't present and it's not because of a reset, the
-           status register is handled specially; the ATA-1 specification
-           says that drive 0 will respond with 0x00 if drive 1 is not present
-           in order to ensure that DRDY=0. */
+      }
+      /* if the drive isn't present and it's not because of a reset, the
+         status register is handled specially; the ATA-1 specification
+         says that drive 0 will respond with 0x00 if drive 1 is not present
+         in order to ensure that DRDY=0. */
+      else if (drv_reg == drv_reg_status) {
         if (drive == 1 && TME_ATA_DRIVE_PRESENT(ata, 0)) {
           value = 0x00;
         } else {
@@ -1162,18 +1220,6 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
       value = 0xff;
       break;
     }
-
-#ifndef TME_NO_LOG
-    /* log this read: */
-    if (ata->tme_ata_last_read_reg != reg
-        || ata->tme_ata_last_read_value != value) {
-      ata->tme_ata_last_read_reg = reg;
-      ata->tme_ata_last_read_value = value;
-      tme_log(TME_ATA_LOG_HANDLE(ata), 100000, TME_OK,
-              (TME_ATA_LOG_HANDLE(ata),
-        "REG %d -> 0x%02x", reg, value));
-    }
-#endif /* TME_NO_LOG */
 
     /* run the bus cycle: */
     buffer = value;
@@ -1391,6 +1437,27 @@ _tme_ata_disk_connection_break(struct tme_connection *conn,
   abort();
 }
 
+/* this parses an ATA drive number: */
+static int
+tme_ata_drive_parse(const char *drive_string)
+{
+  unsigned long val;
+  char *p1;
+
+  /* catch a NULL string: */
+  if (drive_string == NULL) {
+    return (-1);
+  }
+
+  /* convert the string: */
+  val = strtoul(drive_string, &p1, 0);
+  if (p1 == drive_string
+      || *p1 != '\0') {
+    return (-1);
+  }
+  return (val);
+}
+
 /* this makes a new connection side for the ATA controller: */
 static int
 _tme_ata_connections_new(struct tme_element *element,
@@ -1398,6 +1465,9 @@ _tme_ata_connections_new(struct tme_element *element,
                          struct tme_connection **_conns,
                          char **_output)
 {
+  struct tme_ata_disk_connection *conn_ata_disk;
+  struct tme_disk_connection *conn_disk;
+  struct tme_connection *conn;
   struct tme_ata *ata;
   int drive;
   int arg_i;
@@ -1417,8 +1487,8 @@ _tme_ata_connections_new(struct tme_element *element,
 
     /* the drive to attach for */
     if (TME_ARG_IS(args[arg_i + 0], "drive")
-        && len < 0
-        && (lun = tme_ata_drive_parse(args[arg_i + 1])) >= 0
+        && drive < 0
+        && (drive = tme_ata_drive_parse(args[arg_i + 1])) >= 0
         && drive < 2
         && ata->tme_ata_disk_connections[drive] == NULL) {
       arg_i += 2;
