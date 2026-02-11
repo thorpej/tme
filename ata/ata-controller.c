@@ -380,9 +380,9 @@ struct tme_ata {
   int tme_ata_int_asserted;
 };
 
-/* maps a command block register to the per-drive instance. */
+/* maps a register to the per-drive instance. */
 static int
-_tme_ata_command_reg_to_drv_reg(int reg)
+_tme_ata_reg_to_drv_reg(int reg, int for_read)
 {
   static const unsigned int regmap[wd_command_num_regs] = {
     -1,                     /* wd_data, handled separately */
@@ -395,6 +395,11 @@ _tme_ata_command_reg_to_drv_reg(int reg)
     drv_reg_status,         /* wd_status */
   };
   int rv;
+
+  if (for_read
+       && reg == (wd_command_num_regs + wd_aux_altsts)) {
+    return (drv_reg_status);
+  }
 
   if (reg < 0 || reg >= wd_command_num_regs) {
     rv = -1;
@@ -913,7 +918,7 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
     assert(sb->sector_buffer_index < sizeof(sb->sector_buffer_data));
 
     /* if we're writing, there must be an associated disk buffer. */
-    assert((ata->tme_ata_io_flags[drive] & TME_ATA_IO_WRITE) == 0
+    assert((ata->tme_ata_io_flags[drive] & TME_ATA_IO_WRITE) != 0
            || sb->sector_buffer_disk_buffer != NULL);
 
     /* there must be something left to transfer. */
@@ -1062,6 +1067,10 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
 
   /* get the register being accessed: */
   reg = address >> ata->tme_ata_addr_shift;
+  drv_reg
+    = _tme_ata_reg_to_drv_reg(reg,
+                              (cycle_init->tme_bus_cycle_type
+                               == TME_BUS_CYCLE_READ));
 
   /* figure out which drive we are accessing. */
   drive = TME_ATA_SELECTED_DRIVE(ata);
@@ -1094,6 +1103,14 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
     tme_bus_cycle_xfer(cycle_init, &cycle_resp);
     value = buffer;
 
+#ifndef TME_NO_LOG
+    /* log this write: */
+    tme_log(TME_ATA_LOG_HANDLE(ata), 0, TME_OK,
+            (TME_ATA_LOG_HANDLE(ata),
+             "DRIVE %d REG %d (drv_reg %d) <- 0x%02x",
+             drive, reg, drv_reg, value));
+#endif /* TME_NO_LOG */
+
     switch (reg) {
 
     case wd_data:
@@ -1111,7 +1128,6 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
     case wd_sector:
     case wd_cyl_lo:
     case wd_cyl_hi:
-      drv_reg = _tme_ata_command_reg_to_drv_reg(reg);
       assert(drv_reg != -1);
       if (TME_ATA_DRIVE_PRESENT(ata, 0)) {
         ata->tme_ata_drv_regs[0][drv_reg] = value;
@@ -1135,9 +1151,6 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
       break;
 
     case wd_command_num_regs + wd_aux_control:
-      /* if the new value sets SRST, first we must cancel any
-         pending I/O.  This will prevent the drive from reporting
-         DRDY=1 until the cancellation is acknowledged.  */
       if (value & WDCTL_RST) {
         new_callouts |= _tme_ata_reset(ata);
       }
@@ -1174,10 +1187,6 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
     case wd_cyl_hi:
     case wd_status:
     case wd_command_num_regs + wd_aux_altsts:
-      drv_reg =
-        ((reg == (wd_command_num_regs + wd_aux_altsts)
-         ? drv_reg_status
-         : _tme_ata_command_reg_to_drv_reg(reg)));
       assert(drv_reg != -1);
       if (TME_ATA_DRIVE_PRESENT(ata, drive)) {
         value = ata->tme_ata_drv_regs[drive][drv_reg];
@@ -1220,6 +1229,15 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
       value = 0xff;
       break;
     }
+
+#ifndef TME_NO_LOG
+    if (1) {
+      tme_log(TME_ATA_LOG_HANDLE(ata), 0, TME_OK,
+              (TME_ATA_LOG_HANDLE(ata),
+               "DRIVE %d REG %d (drv_reg %d) -> 0x%02x",
+               drive, reg, drv_reg, value));
+    }
+#endif /* ! TME_NO_LOG */
 
     /* run the bus cycle: */
     buffer = value;
