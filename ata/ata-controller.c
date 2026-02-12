@@ -128,22 +128,22 @@
 #define WDCC_FORMAT     0x50  /* format track */
 #define WDCC_IDENTIFY   0xec  /* identify drive */
 #define WDCC_IDP        0x91  /* initialize drive parameters */
-#define WDCC_RECAL_0    0x10  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_1    0x11  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_2    0x12  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_3    0x13  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_4    0x14  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_5    0x15  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_6    0x16  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_7    0x17  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_8    0x18  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_9    0x19  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_a    0x1a  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_b    0x1b  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_c    0x1c  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_d    0x1d  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_e    0x1e  /* disk recalibrate -- resets cntlr */
-#define WDCC_RECAL_f    0x1f  /* disk recalibrate -- resets cntlr */
+#define WDCC_RECAL_0    0x10  /* disk recalibrate */
+#define WDCC_RECAL_1    0x11  /* disk recalibrate */
+#define WDCC_RECAL_2    0x12  /* disk recalibrate */
+#define WDCC_RECAL_3    0x13  /* disk recalibrate */
+#define WDCC_RECAL_4    0x14  /* disk recalibrate */
+#define WDCC_RECAL_5    0x15  /* disk recalibrate */
+#define WDCC_RECAL_6    0x16  /* disk recalibrate */
+#define WDCC_RECAL_7    0x17  /* disk recalibrate */
+#define WDCC_RECAL_8    0x18  /* disk recalibrate */
+#define WDCC_RECAL_9    0x19  /* disk recalibrate */
+#define WDCC_RECAL_a    0x1a  /* disk recalibrate */
+#define WDCC_RECAL_b    0x1b  /* disk recalibrate */
+#define WDCC_RECAL_c    0x1c  /* disk recalibrate */
+#define WDCC_RECAL_d    0x1d  /* disk recalibrate */
+#define WDCC_RECAL_e    0x1e  /* disk recalibrate */
+#define WDCC_RECAL_f    0x1f  /* disk recalibrate */
 #define WDCC_SEEK_0     0x70  /* disk seek */
 #define WDCC_SEEK_1     0x71  /* disk seek */
 #define WDCC_SEEK_2     0x72  /* disk seek */
@@ -193,7 +193,6 @@
    no drives are connected.  The drive internal state gets reset on
    the rising edge of SRST, and then when SRST goes low, the drives
    will respond as though an instantaneous reset has occurred. */
-/* XXX placeholder */
 #define	TME_ATA_DRIVE_PRESENT(ata, d) \
   ((((ata)->tme_ata_reg_aux_control & WDCTL_RST) == 0) \
    && ((ata)->tme_ata_disk_connections[(d)] != NULL))
@@ -362,12 +361,17 @@ struct tme_ata {
     unsigned int sector_buffer_resid;
   } tme_ata_sector_buffers[2];
 
+  /* cursor used for each drive during I/O */
+  tme_uint32_t tme_ata_io_cursor[2];
+
   /* I/O flags for each drive. */
   unsigned int tme_ata_io_flags[2];
 
 #define TME_ATA_IO_8BIT       TME_BIT(0)
 #define TME_ATA_IO_READ       TME_BIT(1)  /* drive -> host */
 #define TME_ATA_IO_WRITE      TME_BIT(1)  /* host -> drive */
+#define TME_ATA_IO_LBA        TME_BIT(2)  /* command is LBA mode */
+#define TME_ATA_IO_ADVANCE    TME_BIT(3)  /* need to advance the cursor */
 
   /* the disk connections: */
   struct tme_ata_disk_connection *tme_ata_disk_connections[2];
@@ -446,7 +450,7 @@ _tme_ata_reset(struct tme_ata *ata)
 }
 
 /* set internal logic to indicate a host data transfer is ready */
-static void
+static int
 _tme_ata_data_transfer_init(struct tme_ata *ata,
                             int drive,
                             unsigned int sector_count,
@@ -461,6 +465,8 @@ _tme_ata_data_transfer_init(struct tme_ata *ata,
   ata->tme_ata_io_flags[drive] |= flags;
 
   ata->tme_ata_drv_regs[drive][drv_reg_status] |= WDCS_DRQ;
+
+  return ((flags & TME_ATA_IO_READ) ? TRUE : FALSE);
 }
 
 /* clear in-flight I/O state. */
@@ -468,10 +474,60 @@ static void
 _tme_ata_data_transfer_fini(struct tme_ata *ata,
                             int drive)
 {
-  ata->tme_ata_io_flags[drive] &= ~(TME_ATA_IO_READ | TME_ATA_IO_WRITE);
+  ata->tme_ata_io_flags[drive]
+    &= ~(TME_ATA_IO_READ | TME_ATA_IO_WRITE
+         | TME_ATA_IO_LBA | TME_ATA_IO_ADVANCE);
   ata->tme_ata_drv_regs[drive][drv_reg_status] &= ~WDCS_DRQ;
 
   ata->tme_ata_sector_buffers[drive].sector_buffer_disk_buffer = NULL;
+}
+
+/* advance the drive cursor during I/O */
+static void
+_tme_ata_advance_cursor(struct tme_ata *ata,
+                        int drive,
+                        int count)
+{
+  struct tme_ata_disk_connection *conn_ata_disk;
+  tme_uint32_t cursor;
+  tme_uint32_t cylinder;
+  tme_uint32_t head;
+  tme_uint32_t sector;
+
+  assert((ata->tme_ata_io_flags[drive] & TME_ATA_IO_ADVANCE) != 0);
+
+  cursor = (ata->tme_ata_io_cursor[drive] += count);
+
+  if (ata->tme_ata_io_flags[drive] & TME_ATA_IO_LBA) {
+    ata->tme_ata_drv_regs[drive][drv_reg_sector] = (tme_uint8_t)cursor;
+    cursor >>= 8;
+    ata->tme_ata_drv_regs[drive][drv_reg_cyl_lo] = (tme_uint8_t)cursor;
+    cursor >>= 8;
+    ata->tme_ata_drv_regs[drive][drv_reg_cyl_hi] = (tme_uint8_t)cursor;
+    cursor >>= 8;
+    ata->tme_ata_reg_sdh
+      = (ata->tme_ata_reg_sdh & ~0x0f) | (cursor & 0x0f);
+  }
+  else {
+    conn_ata_disk = ata->tme_ata_disk_connections[drive];
+
+    sector
+      = (cursor % conn_ata_disk->tme_ata_disk_connection_sectors_per_track)
+        + 1;
+    head
+      = (cursor / conn_ata_disk->tme_ata_disk_connection_sectors_per_track)
+        % conn_ata_disk->tme_ata_disk_connection_num_heads;
+    cylinder
+      = cursor / (conn_ata_disk->tme_ata_disk_connection_num_heads
+                  * conn_ata_disk->tme_ata_disk_connection_sectors_per_track);
+
+    ata->tme_ata_drv_regs[drive][drv_reg_sector] = (tme_uint8_t)sector;
+    ata->tme_ata_drv_regs[drive][drv_reg_cyl_lo] = (tme_uint8_t)cylinder;
+    cylinder >>= 8;
+    ata->tme_ata_drv_regs[drive][drv_reg_cyl_hi] = (tme_uint8_t)cylinder;
+    ata->tme_ata_reg_sdh
+      = (ata->tme_ata_reg_sdh & ~0x0f) | (head & 0x0f);
+  }
 }
 
 /* copy a string into an IDENTIFY buffer field, padding with spaces. */
@@ -503,62 +559,17 @@ _tme_ata_abort_command(struct tme_ata *ata, int drive)
 #define TME_ATA_DISK_MODEL    "TME ATA DISK"
 #define TME_ATA_DISK_REVISION "021025"
 
-#define TME_MAX_SECTORS_IRQ   1
+#define TME_ATA_MAX_SECTORS_IRQ   1
 
-/* IDENTIFY command: */
-static void
-_tme_ata_command_identify(struct tme_ata *ata, int drive)
-{
-  struct ata_drive_params *atap;
-  struct tme_ata_disk_connection *conn_ata_disk;
-  tme_uint32_t blocks;
-
-  conn_ata_disk = ata->tme_ata_disk_connections[drive];
-  assert(conn_ata_disk != NULL);
-
-  atap = (struct ata_drive_params *)
-    &ata->tme_ata_sector_buffers[drive].sector_buffer_data;
-
-  memset(atap, 0, sizeof(*atap));
-  atap->atap_config = tme_htole_u16(ATAP_CFG_value);
-  atap->atap_cylinders
-    = tme_htole_u16(conn_ata_disk->tme_ata_disk_connection_num_cylinders);
-  atap->atap_heads
-    = tme_htole_u16(conn_ata_disk->tme_ata_disk_connection_num_heads);
-  atap->atap_sectors_track
-    = tme_htole_u16(conn_ata_disk->tme_ata_disk_connection_sectors_per_track);
-
-  _tme_ata_copy_identify_string(atap->atap_serial,
-                                "",
-                                sizeof(atap->atap_serial));
-  _tme_ata_copy_identify_string(atap->atap_revision,
-                                TME_ATA_DISK_REVISION,
-                                sizeof(atap->atap_revision));
-  _tme_ata_copy_identify_string(atap->atap_model,
-                                TME_ATA_DISK_MODEL,
-                                sizeof(atap->atap_model));
-
-  atap->atap_multi = TME_MAX_SECTORS_IRQ;
-  atap->atap_capabilities1
-    = tme_htole_u16(ATAP_CAP1_LBA);
-
-  blocks = conn_ata_disk->tme_ata_disk_connection_last_lba + 1;
-  assert(blocks != 0);
-
-  atap->atap_lba_capacity[0] = tme_htole_u16(blocks & 0xffff);
-  atap->atap_lba_capacity[1] = tme_htole_u16(blocks >> 16);
-
-  /* data is now available for the host. */
-  _tme_ata_data_transfer_init(ata, drive, 1, TME_ATA_IO_READ);
-}
-
-/* READ and WRITE commands: */
+/* get the LBA and sector count for an I/O operation.  returns TRUE
+   if the command was aborted due to invalid parameters. */
 static int
-_tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
+_tme_ata_get_io_params(struct tme_ata *ata,
+                       int drive,
+                       tme_uint32_t *lba_out,
+                       tme_uint32_t *sectors_out)
 {
   struct tme_ata_disk_connection *conn_ata_disk;
-  struct tme_disk_connection *other_conn_disk;
-  struct tme_ata_sector_buffer *sb;
   tme_uint32_t num_cylinders;
   tme_uint32_t num_heads;
   tme_uint32_t num_sectors;
@@ -567,23 +578,16 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
   tme_uint32_t sector;
   tme_uint32_t lba;
   tme_uint32_t sector_count;
-  union tme_value64 off;
-  unsigned long len;
-  int rc;
 
   conn_ata_disk = ata->tme_ata_disk_connections[drive];
-  other_conn_disk
-    = ((struct tme_disk_connection *)
-       conn_ata_disk->tme_ata_disk_connection.tme_disk_connection.tme_connection_other);
-
-  sb = &ata->tme_ata_sector_buffers[drive];
 
   if (ata->tme_ata_reg_sdh & WDSD_LBA) {
     lba =              ata->tme_ata_reg_sdh & 0xf;
     lba = (lba << 8) | ata->tme_ata_drv_regs[drive][drv_reg_cyl_hi];
     lba = (lba << 8) | ata->tme_ata_drv_regs[drive][drv_reg_cyl_lo];
     lba = (lba << 8) | ata->tme_ata_drv_regs[drive][drv_reg_sector];
-  } else {
+  }
+  else {
     num_cylinders = conn_ata_disk->tme_ata_disk_connection_num_cylinders;
     num_heads = conn_ata_disk->tme_ata_disk_connection_num_heads;
     num_sectors = conn_ata_disk->tme_ata_disk_connection_sectors_per_track;
@@ -619,6 +623,103 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
     return (TRUE);
   }
 
+  *lba_out = lba;
+  *sectors_out = sector_count;
+
+  return (FALSE);
+}
+
+/* IDENTIFY command: */
+static int
+_tme_ata_command_identify(struct tme_ata *ata, int drive)
+{
+  struct ata_drive_params *atap;
+  struct tme_ata_disk_connection *conn_ata_disk;
+  tme_uint32_t blocks;
+
+  conn_ata_disk = ata->tme_ata_disk_connections[drive];
+  assert(conn_ata_disk != NULL);
+
+  atap = (struct ata_drive_params *)
+    &ata->tme_ata_sector_buffers[drive].sector_buffer_data;
+
+  memset(atap, 0, sizeof(*atap));
+  atap->atap_config = tme_htole_u16(ATAP_CFG_value);
+  atap->atap_cylinders
+    = tme_htole_u16(conn_ata_disk->tme_ata_disk_connection_num_cylinders);
+  atap->atap_heads
+    = tme_htole_u16(conn_ata_disk->tme_ata_disk_connection_num_heads);
+  atap->atap_sectors_track
+    = tme_htole_u16(conn_ata_disk->tme_ata_disk_connection_sectors_per_track);
+
+  _tme_ata_copy_identify_string(atap->atap_serial,
+                                "",
+                                sizeof(atap->atap_serial));
+  _tme_ata_copy_identify_string(atap->atap_revision,
+                                TME_ATA_DISK_REVISION,
+                                sizeof(atap->atap_revision));
+  _tme_ata_copy_identify_string(atap->atap_model,
+                                TME_ATA_DISK_MODEL,
+                                sizeof(atap->atap_model));
+
+  atap->atap_multi = TME_ATA_MAX_SECTORS_IRQ;
+  atap->atap_capabilities1
+    = tme_htole_u16(ATAP_CAP1_LBA);
+
+  blocks = conn_ata_disk->tme_ata_disk_connection_last_lba + 1;
+  assert(blocks != 0);
+
+  atap->atap_lba_capacity[0] = tme_htole_u16(blocks & 0xffff);
+  atap->atap_lba_capacity[1] = tme_htole_u16(blocks >> 16);
+
+  /* data is now available for the host. */
+  return _tme_ata_data_transfer_init(ata, drive, 1, TME_ATA_IO_READ);
+}
+
+/* READ VERIFY command: */
+static void
+_tme_ata_command_read_verify(struct tme_ata *ata, int drive)
+{
+  tme_uint32_t lba;
+  tme_uint32_t sector_count;
+
+  if (_tme_ata_get_io_params(ata, drive, &lba, &sector_count)) {
+    /* command was aborted */
+    return;
+  }
+
+  /* the cursor must point to the last sector verified. */
+  ata->tme_ata_io_cursor[drive] = lba;
+  ata->tme_ata_io_flags[drive] |= TME_ATA_IO_ADVANCE;
+  _tme_ata_advance_cursor(ata, drive, sector_count - 1);
+  ata->tme_ata_io_flags[drive] &= ~TME_ATA_IO_ADVANCE;
+}
+
+/* READ and WRITE commands: */
+static int
+_tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
+{
+  struct tme_ata_disk_connection *conn_ata_disk;
+  struct tme_disk_connection *other_conn_disk;
+  struct tme_ata_sector_buffer *sb;
+  tme_uint32_t lba;
+  tme_uint32_t sector_count;
+  union tme_value64 off;
+  unsigned long len;
+  int rc;
+
+  conn_ata_disk = ata->tme_ata_disk_connections[drive];
+  other_conn_disk
+    = ((struct tme_disk_connection *)
+       conn_ata_disk->tme_ata_disk_connection.tme_disk_connection.tme_connection_other);
+
+  sb = &ata->tme_ata_sector_buffers[drive];
+
+  if (_tme_ata_get_io_params(ata, drive, &lba, &sector_count)) {
+    /* command was aborted, need to interrupt. */
+    return (TRUE);
+  }
+
   /* set the 64-bit offset and the long size: */
   (void) tme_value64_set(&off, lba);
   (void) tme_value64_mul(&off,
@@ -634,7 +735,8 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
            &off,
            len,
            (const tme_uint8_t **)&sb->sector_buffer_disk_buffer));
-  } else {
+  }
+  else {
     /* if this disk is read-only: */
     if (other_conn_disk->tme_disk_connection_write == NULL) {
       _tme_ata_abort_command(ata, drive);
@@ -655,21 +757,29 @@ _tme_ata_command_io(struct tme_ata *ata, int drive, tme_uint8_t rw)
   }
   sb->sector_buffer_disk_buffer_index = 0;
 
+  /* initialize the cursor that represents the currently relevant
+     sector.  this will get advanced as the I/O moves along and
+     at the end will point to the last sector read or written. */
+  ata->tme_ata_io_cursor[drive] = lba;
+
   /* if we're reading, we need to do the initial fill of the sector
      buffer. */
   if (rw == WDCC_READ) {
     memcpy(sb->sector_buffer_data,
            sb->sector_buffer_disk_buffer,
            sizeof(sb->sector_buffer_data));
+
+    /* for the firsts sector buffer fill, the cursor already points to
+       the correct place.  it needs to be advanced to point to current
+       sector at each subsequent fill. */
+    ata->tme_ata_io_flags[drive] |= TME_ATA_IO_ADVANCE;
   }
 
-  _tme_ata_data_transfer_init(ata,
-                              drive,
-                              sector_count,
-                              ((rw == WDCC_READ)
-                               ? TME_ATA_IO_READ : TME_ATA_IO_WRITE));
-
-  return (TRUE);
+  return _tme_ata_data_transfer_init(ata,
+                                     drive,
+                                     sector_count,
+                                     ((rw == WDCC_READ)
+                                      ? TME_ATA_IO_READ : TME_ATA_IO_WRITE));
 }
 
 /* SET FEATURES command: */
@@ -715,12 +825,13 @@ _tme_ata_command(struct tme_ata *ata)
   int drive = TME_ATA_SELECTED_DRIVE(ata);
   int assert_interrupt;
 
+  /* N.B. We don't bother with BSY much here, since the commands
+     complete instantanously from the perspective of the guest and
+     thus there is no opportunity to observe it. */
+
   /* clear out previous command status bits. */
   ata->tme_ata_drv_regs[drive][drv_reg_status]
     &= ~(WDCS_ERR | WDCS_CORR | WDCS_DRQ | WDCS_DSC | WDCS_DWF);
-
-  /* mark the drive as busy. */
-  ata->tme_ata_drv_regs[drive][drv_reg_status] |= WDCS_BSY;
 
   /* cancel any in-flight I/O. */
   _tme_ata_data_transfer_fini(ata, drive);
@@ -749,17 +860,19 @@ _tme_ata_command(struct tme_ata *ata)
     break;
 
   case WDCC_FORMAT:
-    /* XXX */
     _tme_ata_abort_command(ata, drive);
     break;
 
   case WDCC_IDENTIFY:
-    _tme_ata_command_identify(ata, drive);
+    assert_interrupt = _tme_ata_command_identify(ata, drive);
     break;
 
   case WDCC_IDP:
-    /* XXX */
     _tme_ata_abort_command(ata, drive);
+    break;
+
+  case WDCC_READ_VERF:
+    _tme_ata_command_read_verify(ata, drive);
     break;
 
   case WDCC_READ:
@@ -773,16 +886,24 @@ _tme_ata_command(struct tme_ata *ata)
     break;
 
   default:
-    _tme_ata_abort_command(ata, drive);
+    if (ata->tme_ata_reg_command >= WDCC_RECAL_0
+        && ata->tme_ata_reg_command <= WDCC_RECAL_f) {
+      /* recalibrate always succeeds */
+    }
+    else if (ata->tme_ata_reg_command >= WDCC_SEEK_0
+             && ata->tme_ata_reg_command <= WDCC_SEEK_f) {
+      /* seek also always succeeds, but also sets DSC */
+      ata->tme_ata_drv_regs[drive][drv_reg_status] |= WDCS_DSC;
+    }
+    else {
+      _tme_ata_abort_command(ata, drive);
+    }
   }
 
   if (assert_interrupt) {
     ata->tme_ata_int_pending = TRUE;
     ata->tme_ata_callout_flags |= TME_ATA_CALLOUT_INT;
   }
-
-  /* drive is no longer busy. */
-  ata->tme_ata_drv_regs[drive][drv_reg_status] &= ~WDCS_BSY;
 }
 
 /* our callout function.  it must be called with the mutex locked: */
@@ -955,6 +1076,14 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
                sizeof(sb->sector_buffer_data));
         sb->sector_buffer_disk_buffer_index += sizeof(sb->sector_buffer_data);
 
+        /* advance the cursor to point at the sector just written.  this
+           is not done for the first sector because the cursor already
+           points to it. */
+        if (ata->tme_ata_io_flags[drive] & TME_ATA_IO_ADVANCE) {
+          _tme_ata_advance_cursor(ata, drive, 1);
+        }
+        ata->tme_ata_io_flags[drive] |= TME_ATA_IO_ADVANCE;
+
         /* reset the sector buffer index. */
         sb->sector_buffer_index = 0;
 
@@ -963,6 +1092,7 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
 
         /* decrement the residual count and update I/O status. */
         sb->sector_buffer_resid--;
+        ata->tme_ata_drv_regs[drive][drv_reg_seccnt] = sb->sector_buffer_resid;
         if (sb->sector_buffer_resid == 0) {
           _tme_ata_data_transfer_fini(ata, drive);
         }
@@ -996,23 +1126,20 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
         /* decrement the residual count, maybe re-fill the sector buffer,
            and update I/O status. */
         sb->sector_buffer_resid--;
+        ata->tme_ata_drv_regs[drive][drv_reg_seccnt] = sb->sector_buffer_resid;
         if (sb->sector_buffer_resid == 0) {
           _tme_ata_data_transfer_fini(ata, drive);
         } else if (sb->sector_buffer_disk_buffer != NULL) {
 
-          /* strictly speaking, a real drive would set BSY while it reads
-             the next sector.  we'll go ahead and set BSY while we re-fill
-             the sector buffer, but no one will have the opportunity to
-             observe it. */
-          ata->tme_ata_drv_regs[drive][drv_reg_status] |= WDCS_BSY;
+          /* advance the cursor to indicate where we re-filling the
+             sector buffer from. */
+          _tme_ata_advance_cursor(ata, drive, 1);
 
           sb->sector_buffer_disk_buffer_index
             += sizeof(sb->sector_buffer_data);
           memcpy(sb->sector_buffer_data,
                  &sb->sector_buffer_disk_buffer[sb->sector_buffer_disk_buffer_index],
                  sizeof(sb->sector_buffer_data));
-
-          ata->tme_ata_drv_regs[drive][drv_reg_status] &= ~WDCS_BSY;
         }
       }
     }
