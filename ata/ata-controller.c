@@ -239,8 +239,8 @@ struct ata_drive_params {
   tme_uint16_t atap___reserved48;       /* 48: */
   tme_uint16_t atap_capabilities1;      /* 49: capability flags */
 
-#define ATAP_CAP1_LBA       TME_BIT(8)
-#define ATAP_CAP1_DMA       TME_BIT(9)
+#define ATAP_CAP1_DMA       TME_BIT(8)
+#define ATAP_CAP1_LBA       TME_BIT(9)
 
   tme_uint16_t atap___reserved50;       /* 50: */
 #ifdef WORDS_BIGENDIAN
