@@ -92,7 +92,7 @@
 /* System Enable Register bits: */
 #define TME_PH1_SYSEN_MMU     0x01  /* enable the MMU */
 #define TME_PH1_SYSEN_INT     0x02  /* enable interrupts */
-#define TME_PH1_SYSEN_REBOOT  0x80  /* system should reboot */
+/* The remaining System Enable Register bits are used by software. *
 
 /* Interrupt Set/Clear Register bits: */
 #define TME_PH1_SWINT_IPL1    0x01
