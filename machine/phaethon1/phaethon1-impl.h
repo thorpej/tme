@@ -74,6 +74,8 @@
 #define tme_ph1_sysen     _TME_PH1_CONTROL_IREG8(0x20)
 #define tme_ph1_intrset   _TME_PH1_CONTROL_IREG8(0x40)
 #define tme_ph1_intrclr   _TME_PH1_CONTROL_IREG8(0x50)
+#define tme_ph1_brdrev    _TME_PH1_CONTROL_IREG8(0xe0)
+#define tme_ph1_pldrev    _TME_PH1_CONTROL_IREG8(0xf0)
 /* mmu control space: */
 #define tme_ph1_segmap0   _TME_PH1_CONTROL_IREG16((1 << 1))
 #define tme_ph1_segmap    _TME_PH1_CONTROL_IREG16((2 << 1))
@@ -81,6 +83,9 @@
 #define tme_ph1_pagemap_u _TME_PH1_CONTROL_IREG16((4 << 1))
 #define tme_ph1_pagemap_l _TME_PH1_CONTROL_IREG16((5 << 1))
 #define tme_ph1_buserror  _TME_PH1_CONTROL_IREG8((6 << 1))
+
+#define TME_PH1_BRDREV    1 /* indicates TME emulator */
+#define TME_PH1_PLDREV    0 /* TME PLD revision 0 */
 
 #define TME_PH1_CONTROL_REG_MMU_P(addr) \
   (((addr) & (7 << 1)) != 0)
@@ -92,7 +97,7 @@
 /* System Enable Register bits: */
 #define TME_PH1_SYSEN_MMU     0x01  /* enable the MMU */
 #define TME_PH1_SYSEN_INT     0x02  /* enable interrupts */
-/* The remaining System Enable Register bits are used by software. *
+/* The remaining System Enable Register bits are used by software. */
 
 /* Interrupt Set/Clear Register bits: */
 #define TME_PH1_SWINT_IPL1    0x01

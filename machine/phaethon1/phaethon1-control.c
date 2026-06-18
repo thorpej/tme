@@ -118,6 +118,14 @@ _tme_ph1_control_cycle_handler(void *_ph1,
       ph1->tme_ph1_intrclr = ph1->tme_ph1_swint_pending;
     }
 
+    /* the board and pld revision registers return constants.  */
+    if (_TME_PH1_REG_ACCESSED(tme_ph1_brdrev)) {
+      ph1->tme_ph1_brdrev = TME_PH1_BRDREV;
+    }
+    if (_TME_PH1_REG_ACCESSED(tme_ph1_pldrev)) {
+      ph1->tme_ph1_brdrev = TME_PH1_PLDREV;
+    }
+
     /* the buserror register is read-only, and it is reset to 0 when
        it is read.  */
     if (_TME_PH1_REG_ACCESSED(tme_ph1_buserror)) {
