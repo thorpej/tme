@@ -50,10 +50,9 @@
 #define   CSR_ENAB        TME_BIT(0)  /* timer is enabled */
 #define   CSR_INT         TME_BIT(1)  /* interrupt is pending */
 
-#define PGTIMER_REG_LSB   1
-#define PGTIMER_REG_MSB   2
+#define PGTIMER_REG_VAL   1
 
-#define PGTIMER_NUM_REGS  3
+#define PGTIMER_NUM_REGS  2
 
 /* define this to track interrupt rates, reporting once every N
    seconds:  */
@@ -91,11 +90,11 @@ struct tme_pgtimer {
   /* this is non-zero iff callouts are running: */
   int tme_pgtimer_callouts_running;
 
-  /* the registers: */
-  tme_uint8_t tme_pgtimer_regs[PGTIMER_NUM_REGS];
-#define tme_pgtimer_reg_csr  tme_pgtimer_regs[PGTIMER_REG_CSR]
-#define tme_pgtimer_reg_lsb  tme_pgtimer_regs[PGTIMER_REG_LSB]
-#define tme_pgtimer_reg_msb  tme_pgtimer_regs[PGTIMER_REG_MSB]
+  /* the control / status register: */
+  tme_uint8_t tme_pgtimer_reg_csr;
+
+  /* reload value: */
+  tme_uint16_t tme_pgtimer_reload;
 
   /* pre-computed real-time duration of programmed timer interval.
      this gets calculated when the ENAB bit is set in the CSR. */
@@ -126,8 +125,7 @@ static void
 _tme_pgtimer_reset(struct tme_pgtimer *t)
 {
   t->tme_pgtimer_reg_csr = 0;
-  t->tme_pgtimer_reg_lsb = 0;
-  t->tme_pgtimer_reg_msb = 0;
+  t->tme_pgtimer_reload  = 0;
 
   /* callout after resetting to update interrupt output. */
 }
@@ -282,9 +280,8 @@ _tme_pgtimer_compute_interval(struct tme_pgtimer *t)
   /* from the timer frequency, calculate the ns per clock tick */
   unsigned int ns_per_tick = 1000000000 / timer_freq;
 
-  /* compute the number of ticks from the LSB and MSB regs. */
-  unsigned int interval_ticks = t->tme_pgtimer_reg_msb;
-  interval_ticks = (interval_ticks << 8) | t->tme_pgtimer_reg_lsb;
+  /* get the number of ticks from the reload value */
+  unsigned int interval_ticks = t->tme_pgtimer_reload;
 
   /* compute the ns per interval */
   unsigned int interval_ns = interval_ticks * ns_per_tick;
@@ -364,11 +361,10 @@ _tme_pgtimer_bus_cycle(void *_pgtimer, struct tme_bus_cycle *cycle_init)
       }
       break;
 
-      /* writing to either LSB or MSB clears the CSR. */
-    case PGTIMER_REG_LSB:
-    case PGTIMER_REG_MSB:
+      /* writing to the value register clears the CSR. */
+    case PGTIMER_REG_VAL:
       t->tme_pgtimer_reg_csr = 0;
-      t->tme_pgtimer_regs[reg] = value;
+      t->tme_pgtimer_reload = (t->tme_pgtimer_reload << 8) | value;
       need_callout = TRUE;
       break;
 
@@ -392,11 +388,9 @@ _tme_pgtimer_bus_cycle(void *_pgtimer, struct tme_bus_cycle *cycle_init)
       }
       break;
 
-      /* N.B. these are the *reload* values.  There is no way to poll
-         the internal counter.  */
-    case PGTIMER_REG_LSB:
-    case PGTIMER_REG_MSB:
-      value = t->tme_pgtimer_regs[reg];
+    case PGTIMER_REG_VAL:
+      /* this is a write-only register; hardware returns 0xff on read */
+      value = 0xff;
       break;
 
     default:
