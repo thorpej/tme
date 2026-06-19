@@ -38,17 +38,81 @@
  */
 
 #include <tme/common.h>
+#include <tme/log.h>
 
 /* includes: */
 #include <tme/machine/pg68k.h>
 #include "phaethon1-impl.h"
 
 /* macros: */
+#define DD7SEG_A        0x01
+#define DD7SEG_B        0x02
+#define DD7SEG_C        0x04
+#define DD7SEG_D        0x08
+#define DD7SEG_E        0x10
+#define DD7SEG_F        0x20
+#define DD7SEG_G        0x40
+
+#define DD7SEG_CHR_0    DD7SEG_G
+#define DD7SEG_CHR_1    (DD7SEG_A+DD7SEG_D+DD7SEG_E+DD7SEG_F+DD7SEG_G)
+#define DD7SEG_CHR_2    (DD7SEG_C+DD7SEG_F)
+#define DD7SEG_CHR_3    (DD7SEG_E+DD7SEG_F)
+#define DD7SEG_CHR_4    (DD7SEG_A+DD7SEG_D+DD7SEG_E)
+#define DD7SEG_CHR_5    (DD7SEG_B+DD7SEG_E)
+#define DD7SEG_CHR_6    DD7SEG_B
+#define DD7SEG_CHR_7    (DD7SEG_D+DD7SEG_E+DD7SEG_F+DD7SEG_G)
+#define DD7SEG_CHR_8    0
+#define DD7SEG_CHR_9    (DD7SEG_D+DD7SEG_E)
+#define DD7SEG_CHR_A    DD7SEG_D
+#define DD7SEG_CHR_B    (DD7SEG_A+DD7SEG_B)
+#define DD7SEG_CHR_C    (DD7SEG_B+DD7SEG_C+DD7SEG_G)
+#define DD7SEG_CHR_D    (DD7SEG_A+DD7SEG_F)
+#define DD7SEG_CHR_E    (DD7SEG_B+DD7SEG_C)
+#define DD7SEG_CHR_F    (DD7SEG_B+DD7SEG_C+DD7SEG_D)
+#define DD7SEG_CHR_SPACE 0xf
+
+static int
+_tme_ph1_dd7seg_chr(tme_uint8_t val)
+{
+  switch (val) {
+  case DD7SEG_CHR_0:     return '0';
+  case DD7SEG_CHR_1:     return '1';
+  case DD7SEG_CHR_2:     return '2';
+  case DD7SEG_CHR_3:     return '3';
+  case DD7SEG_CHR_4:     return '4';
+  case DD7SEG_CHR_5:     return '5';
+  case DD7SEG_CHR_6:     return '6';
+  case DD7SEG_CHR_7:     return '7';
+  case DD7SEG_CHR_8:     return '8';
+  case DD7SEG_CHR_9:     return '9';
+  case DD7SEG_CHR_A:     return 'A';
+  case DD7SEG_CHR_B:     return 'b';
+  case DD7SEG_CHR_C:     return 'C';
+  case DD7SEG_CHR_D:     return 'd';
+  case DD7SEG_CHR_E:     return 'E';
+  case DD7SEG_CHR_F:     return 'F';
+  case DD7SEG_CHR_SPACE: return ' ';
+  default:               return -1;
+  }
+}
 
 static void
 _tme_ph1_dd7seg_update_display(struct tme_ph1 *ph1)
 {
-  /* XXX */
+  int upper = _tme_ph1_dd7seg_chr(ph1->tme_ph1_dd7seg_u);
+  int lower = _tme_ph1_dd7seg_chr(ph1->tme_ph1_dd7seg_l);
+
+  if (upper > 0 && lower > 0) {
+    tme_log(TME_PH1_LOG_HANDLE(ph1), 0, TME_OK,
+	    (TME_PH1_LOG_HANDLE(ph1),
+             _("DD7SEG: |%c%c|"), upper, lower));
+  } else {
+    tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+	    (TME_PH1_LOG_HANDLE(ph1),
+	     _("DD7SEG: u=0x%02x l=0x%02x"),
+             ph1->tme_ph1_dd7seg_u,
+             ph1->tme_ph1_dd7seg_l));
+  }
 }
 
 /* the bus cycle handler for function code 4 space: */
