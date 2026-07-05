@@ -380,7 +380,7 @@ struct tme_ata {
   int tme_ata_callout_flags;
 
   /* our interrupt state. */
-  int tme_ata_int_pending;
+  int tme_ata_int_pending[2];
   int tme_ata_int_asserted;
 };
 
@@ -443,7 +443,7 @@ _tme_ata_reset(struct tme_ata *ata)
   ata->tme_ata_io_flags[1] = 0;
 
   /* no pending interrupts */
-  ata->tme_ata_int_pending = FALSE;
+  ata->tme_ata_int_pending[0] = ata->tme_ata_int_pending[1] = FALSE;
 
   /* interrupt status may have changed. */
   return (TME_ATA_CALLOUT_INT);
@@ -905,7 +905,7 @@ _tme_ata_command(struct tme_ata *ata)
   }
 
   if (assert_interrupt) {
-    ata->tme_ata_int_pending = TRUE;
+    ata->tme_ata_int_pending[drive] = TRUE;
     ata->tme_ata_callout_flags |= TME_ATA_CALLOUT_INT;
   }
 }
@@ -916,6 +916,7 @@ _tme_ata_callout(struct tme_ata *ata,
                  int new_callouts)
 {
   struct tme_bus_connection *conn_bus;
+  int drive = TME_ATA_SELECTED_DRIVE(ata);
   int callouts;
   int later_callouts;
   int new_int_asserted;
@@ -956,7 +957,7 @@ _tme_ata_callout(struct tme_ata *ata,
     }
 
     if (callouts & TME_ATA_CALLOUT_INT) {
-      new_int_asserted = ata->tme_ata_int_pending
+      new_int_asserted = ata->tme_ata_int_pending[drive]
         && ((ata->tme_ata_reg_aux_control & WDCTL_IDS) == 0);
     }
   }
@@ -1124,9 +1125,6 @@ _tme_ata_bus_cycle_data(struct tme_ata *ata,
         /* reset the sector buffer index. */
         sb->sector_buffer_index = 0;
 
-        /* sector complete, raise an interrupt. */
-        assert_interrupt = TRUE;
-
         /* decrement the residual count, maybe re-fill the sector buffer,
            and update I/O status. */
         sb->sector_buffer_resid--;
@@ -1270,6 +1268,10 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
 
     case wd_sdh:
       if (TME_ATA_ANY_DRIVE_PRESENT(ata)) {
+        if ((ata->tme_ata_reg_sdh ^ value) & WDSD_DRV1) {
+          /* selected drive chaged; interrupt status may be different. */
+          new_callouts |= TME_ATA_CALLOUT_INT;
+        }
         ata->tme_ata_reg_sdh = value | WDSD_IBM;
       }
       break;
@@ -1323,7 +1325,7 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
         value = ata->tme_ata_drv_regs[drive][drv_reg];
         if (reg == wd_status) {
           /* reading the status register clears any pending interrupt: */
-          ata->tme_ata_int_pending = FALSE;
+          ata->tme_ata_int_pending[drive] = FALSE;
           new_callouts |= TME_ATA_CALLOUT_INT;
         }
       }
