@@ -530,21 +530,25 @@ _tme_ata_advance_cursor(struct tme_ata *ata,
   }
 }
 
-/* copy a string into an IDENTIFY buffer field, padding with spaces. */
+/* copy a string into an IDENTIFY buffer field, padding with spaces
+   and performing the extremely silly string byte-swap that is one of
+   the most endearing features of ATA.  */
 static void
 _tme_ata_copy_identify_string(tme_uint8_t *data,
                               const char *string,
                               unsigned int size)
 {
   tme_uint8_t c;
+  unsigned int i;
 
-  for (; size-- > 0; ) {
-    c = *(string++); 
+  for (i = 0; i < size; i++) {
+    c = *string;
     if (c == '\0') {
       c = ' ';
-      string--;
+    } else {
+      string++;
     }
-    *(data++) = c;
+    data[i ^ 1] = c;
   }
 }
 
@@ -557,7 +561,7 @@ _tme_ata_abort_command(struct tme_ata *ata, int drive)
 }
 
 #define TME_ATA_DISK_MODEL    "TME ATA DISK"
-#define TME_ATA_DISK_REVISION "021025"
+#define TME_ATA_DISK_REVISION "070526"
 
 #define TME_ATA_MAX_SECTORS_IRQ   1
 
