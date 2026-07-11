@@ -43,6 +43,7 @@
 #include "phaethon1-impl.h"
 #include <tme/machine/pg68k.h>
 #include <tme/ata/ata-controller.h>
+#include <tme/ic/pcf8584.h>
 #include <tme/ic/tl16c550.h>
 
 /* this possibly updates that the interrupt priority level driven to the CPU: */
@@ -573,6 +574,25 @@ TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,com) {
 
   /* create the tl16c550: */
   sub_args[0] = "tme/ic/tl16c550";
+  sub_args[1] = NULL;
+  return (tme_element_new(element,
+                          (const char * const *) sub_args,
+                          &socket,
+                          _output));
+}
+
+/* this creates a Phaethon1 "pcfiic" I2C controller instance: */
+TME_ELEMENT_SUB_NEW_DECL(tme_machine_phaethon1,pcfiic) {
+  struct tme_pcf8584_socket socket;
+  char *sub_args[2];
+
+  /* create the pcf8584 socket: */
+  socket.tme_pcf8584_socket_version = TME_PCF8584_SOCKET_0;
+  socket.tme_pcf8584_socket_addr_shift = 1;
+  socket.tme_pcf8584_socket_port_least_lane = 1; /* D15-D8 */
+
+  /* create the pcf8584: */
+  sub_args[0] = "tme/ic/pcf8584";
   sub_args[1] = NULL;
   return (tme_element_new(element,
                           (const char * const *) sub_args,

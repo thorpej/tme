@@ -277,6 +277,14 @@ tme_ic_nec765_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(tme_ic_nec765_la_LDFLAGS) $(LDFLAGS) \
 	-o $@
+tme_ic_pcf8584_la_DEPENDENCIES = $(top_builddir)/libtme/libtme.la \
+	$(top_builddir)/generic/libtme-generic.la
+am_tme_ic_pcf8584_la_OBJECTS = pcf8584.lo
+tme_ic_pcf8584_la_OBJECTS = $(am_tme_ic_pcf8584_la_OBJECTS)
+tme_ic_pcf8584_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(tme_ic_pcf8584_la_LDFLAGS) $(LDFLAGS) \
+	-o $@
 tme_ic_stp2024_la_DEPENDENCIES = $(top_builddir)/libtme/libtme.la \
 	$(top_builddir)/generic/libtme-generic.la
 am_tme_ic_stp2024_la_OBJECTS = stp2024.lo
@@ -322,8 +330,9 @@ am__depfiles_remade = ./$(DEPDIR)/ad184x.Plo ./$(DEPDIR)/am7930.Plo \
 	./$(DEPDIR)/lsi64854.Plo ./$(DEPDIR)/mk48txx.Plo \
 	./$(DEPDIR)/mm58167.Plo ./$(DEPDIR)/ncr5380.Plo \
 	./$(DEPDIR)/ncr53c9x.Plo ./$(DEPDIR)/ncr89c105.Plo \
-	./$(DEPDIR)/nec765.Plo ./$(DEPDIR)/stp2024.Plo \
-	./$(DEPDIR)/tl16c550.Plo ./$(DEPDIR)/z8530.Plo
+	./$(DEPDIR)/nec765.Plo ./$(DEPDIR)/pcf8584.Plo \
+	./$(DEPDIR)/stp2024.Plo ./$(DEPDIR)/tl16c550.Plo \
+	./$(DEPDIR)/z8530.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -349,16 +358,18 @@ SOURCES = $(tme_ic_ad184x_la_SOURCES) $(tme_ic_am7930_la_SOURCES) \
 	$(tme_ic_lsi64854_la_SOURCES) $(tme_ic_mk48txx_la_SOURCES) \
 	$(tme_ic_mm58167_la_SOURCES) $(tme_ic_ncr5380_la_SOURCES) \
 	$(tme_ic_ncr53c9x_la_SOURCES) $(tme_ic_ncr89c105_la_SOURCES) \
-	$(tme_ic_nec765_la_SOURCES) $(tme_ic_stp2024_la_SOURCES) \
-	$(tme_ic_tl16c550_la_SOURCES) $(tme_ic_z8530_la_SOURCES)
+	$(tme_ic_nec765_la_SOURCES) $(tme_ic_pcf8584_la_SOURCES) \
+	$(tme_ic_stp2024_la_SOURCES) $(tme_ic_tl16c550_la_SOURCES) \
+	$(tme_ic_z8530_la_SOURCES)
 DIST_SOURCES = $(tme_ic_ad184x_la_SOURCES) $(tme_ic_am7930_la_SOURCES) \
 	$(tme_ic_am7990_la_SOURCES) $(tme_ic_am9513_la_SOURCES) \
 	$(tme_ic_i825x6_la_SOURCES) $(tme_ic_isil7170_la_SOURCES) \
 	$(tme_ic_lsi64854_la_SOURCES) $(tme_ic_mk48txx_la_SOURCES) \
 	$(tme_ic_mm58167_la_SOURCES) $(tme_ic_ncr5380_la_SOURCES) \
 	$(tme_ic_ncr53c9x_la_SOURCES) $(tme_ic_ncr89c105_la_SOURCES) \
-	$(tme_ic_nec765_la_SOURCES) $(tme_ic_stp2024_la_SOURCES) \
-	$(tme_ic_tl16c550_la_SOURCES) $(tme_ic_z8530_la_SOURCES)
+	$(tme_ic_nec765_la_SOURCES) $(tme_ic_pcf8584_la_SOURCES) \
+	$(tme_ic_stp2024_la_SOURCES) $(tme_ic_tl16c550_la_SOURCES) \
+	$(tme_ic_z8530_la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -598,6 +609,7 @@ DIST_SUBDIRS = m68k ieee754 sparc stp22xx
 pkglib_LTLIBRARIES = @TME_ICS@
 EXTRA_LTLIBRARIES = tme_ic_am9513.la \
 	tme_ic_tl16c550.la \
+	tme_ic_pcf8584.la \
 	tme_ic_z8530.la \
 	tme_ic_i825x6.la \
 	tme_ic_isil7170.la \
@@ -626,6 +638,11 @@ tme_ic_z8530_la_LIBADD = $(top_builddir)/libtme/libtme.la \
 tme_ic_tl16c550_la_SOURCES = tl16c550.c
 tme_ic_tl16c550_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
 tme_ic_tl16c550_la_LIBADD = $(top_builddir)/libtme/libtme.la \
+	$(top_builddir)/generic/libtme-generic.la
+
+tme_ic_pcf8584_la_SOURCES = pcf8584.c
+tme_ic_pcf8584_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
+tme_ic_pcf8584_la_LIBADD = $(top_builddir)/libtme/libtme.la \
 	$(top_builddir)/generic/libtme-generic.la
 
 tme_ic_mm58167_la_SOURCES = mm58167.c
@@ -800,6 +817,9 @@ tme_ic_ncr89c105.la: $(tme_ic_ncr89c105_la_OBJECTS) $(tme_ic_ncr89c105_la_DEPEND
 tme_ic_nec765.la: $(tme_ic_nec765_la_OBJECTS) $(tme_ic_nec765_la_DEPENDENCIES) $(EXTRA_tme_ic_nec765_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(tme_ic_nec765_la_LINK)  $(tme_ic_nec765_la_OBJECTS) $(tme_ic_nec765_la_LIBADD) $(LIBS)
 
+tme_ic_pcf8584.la: $(tme_ic_pcf8584_la_OBJECTS) $(tme_ic_pcf8584_la_DEPENDENCIES) $(EXTRA_tme_ic_pcf8584_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(tme_ic_pcf8584_la_LINK)  $(tme_ic_pcf8584_la_OBJECTS) $(tme_ic_pcf8584_la_LIBADD) $(LIBS)
+
 tme_ic_stp2024.la: $(tme_ic_stp2024_la_OBJECTS) $(tme_ic_stp2024_la_DEPENDENCIES) $(EXTRA_tme_ic_stp2024_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(tme_ic_stp2024_la_LINK)  $(tme_ic_stp2024_la_OBJECTS) $(tme_ic_stp2024_la_LIBADD) $(LIBS)
 
@@ -828,6 +848,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncr53c9x.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncr89c105.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nec765.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcf8584.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stp2024.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tl16c550.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/z8530.Plo@am__quote@ # am--include-marker
@@ -1079,6 +1100,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/ncr53c9x.Plo
 	-rm -f ./$(DEPDIR)/ncr89c105.Plo
 	-rm -f ./$(DEPDIR)/nec765.Plo
+	-rm -f ./$(DEPDIR)/pcf8584.Plo
 	-rm -f ./$(DEPDIR)/stp2024.Plo
 	-rm -f ./$(DEPDIR)/tl16c550.Plo
 	-rm -f ./$(DEPDIR)/z8530.Plo
@@ -1140,6 +1162,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/ncr53c9x.Plo
 	-rm -f ./$(DEPDIR)/ncr89c105.Plo
 	-rm -f ./$(DEPDIR)/nec765.Plo
+	-rm -f ./$(DEPDIR)/pcf8584.Plo
 	-rm -f ./$(DEPDIR)/stp2024.Plo
 	-rm -f ./$(DEPDIR)/tl16c550.Plo
 	-rm -f ./$(DEPDIR)/z8530.Plo

@@ -349,6 +349,7 @@ tmegeneric_HEADERS = \
 	bus-device.h \
 	bus.h \
 	ic.h \
+	i2c.h \
 	serial.h \
 	ethernet.h \
 	fb.h \

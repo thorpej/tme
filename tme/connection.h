@@ -91,5 +91,6 @@ struct tme_connection {
 #define TME_CONNECTION_TAPE		(9)
 #define TME_CONNECTION_BUS_SPARC	(10)
 #define TME_CONNECTION_BUS_UPA		(11)
+#define TME_CONNECTION_I2C		(12)
 
 #endif /* !_TME_CONNECTION_H */

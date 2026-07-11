@@ -11,6 +11,7 @@ DIST_SUBDIRS = m68k ieee754 sparc stp22xx
 pkglib_LTLIBRARIES = @TME_ICS@
 EXTRA_LTLIBRARIES = tme_ic_am9513.la \
 	tme_ic_tl16c550.la \
+	tme_ic_pcf8584.la \
 	tme_ic_z8530.la \
 	tme_ic_i825x6.la \
 	tme_ic_isil7170.la \
@@ -39,6 +40,11 @@ tme_ic_z8530_la_LIBADD = $(top_builddir)/libtme/libtme.la \
 tme_ic_tl16c550_la_SOURCES = tl16c550.c
 tme_ic_tl16c550_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
 tme_ic_tl16c550_la_LIBADD = $(top_builddir)/libtme/libtme.la \
+	$(top_builddir)/generic/libtme-generic.la
+
+tme_ic_pcf8584_la_SOURCES = pcf8584.c
+tme_ic_pcf8584_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
+tme_ic_pcf8584_la_LIBADD = $(top_builddir)/libtme/libtme.la \
 	$(top_builddir)/generic/libtme-generic.la
 
 tme_ic_mm58167_la_SOURCES = mm58167.c
