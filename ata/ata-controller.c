@@ -1234,7 +1234,7 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
 
 #ifndef TME_NO_LOG
     /* log this write: */
-    tme_log(TME_ATA_LOG_HANDLE(ata), 0, TME_OK,
+    tme_log(TME_ATA_LOG_HANDLE(ata), 100000, TME_OK,
             (TME_ATA_LOG_HANDLE(ata),
              "DRIVE %d REG %d (drv_reg %d) <- 0x%02x",
              drive, reg, drv_reg, value));
@@ -1365,7 +1365,7 @@ _tme_ata_bus_cycle(void *_ata, struct tme_bus_cycle *cycle_init)
 
 #ifndef TME_NO_LOG
     if (1) {
-      tme_log(TME_ATA_LOG_HANDLE(ata), 0, TME_OK,
+      tme_log(TME_ATA_LOG_HANDLE(ata), 100000, TME_OK,
               (TME_ATA_LOG_HANDLE(ata),
                "DRIVE %d REG %d (drv_reg %d) -> 0x%02x",
                drive, reg, drv_reg, value));
