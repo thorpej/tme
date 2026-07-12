@@ -51,6 +51,25 @@
 #define PCF_REG_STAT        3   /* S1 */
 #define PCF_REG_CLOCK       4   /* S2 */
 #define PCF_REG_IVEC        5   /* S3 */
+#define PCF_NREGS           6
+
+static const char * const _tme_pcf8584_reg_names[PCF_NREGS] = {
+  "DATA",
+  "OWN-ADDR",
+  "CTRL",
+  "STAT",
+  "CLOCK",
+  "IVEC",
+};
+
+static const char *
+_tme_pcf8584_reg_name(unsigned int r)
+{
+  if (r < PCF_NREGS) {
+    return _tme_pcf8584_reg_names[r];
+  }
+  return "**junk**";
+}
 
 #define PCF_MODE_SLV_REC    0   /* idle mode */
 #define PCF_MODE_SLV_TRM    1
@@ -121,16 +140,10 @@ static int
 _tme_pcf_which_reg(struct tme_pcf *pcf, int a0, int is_read)
 {
   if (a0 & 1) {
-    switch (pcf->tme_pcf_ctrl & (PCF8584_CTRL_ESO|PCF8584_CTRL_ES1)) {
-    case 0:
-      return PCF_REG_CTRL;
-
-    case PCF8584_CTRL_ESO:
-      return is_read ? PCF_REG_STAT : PCF_REG_CTRL;
-
-    default:
-      return PCF_REG_NONE;
+    if ((pcf->tme_pcf_ctrl & PCF8584_CTRL_ESO) != 0 && is_read) {
+      return PCF_REG_STAT;
     }
+    return PCF_REG_CTRL;
   }
 
   switch (pcf->tme_pcf_ctrl &
@@ -145,6 +158,10 @@ _tme_pcf_which_reg(struct tme_pcf *pcf, int a0, int is_read)
     return PCF_REG_CLOCK;
 
   case PCF8584_CTRL_ESO:
+    return PCF_REG_DATA;
+
+  case PCF8584_CTRL_ESO|PCF8584_CTRL_ES1:
+  case PCF8584_CTRL_ESO|PCF8584_CTRL_ES1|PCF8584_CTRL_ES2:
     return PCF_REG_DATA;
 
   case PCF8584_CTRL_ESO|PCF8584_CTRL_ES2:
@@ -166,7 +183,7 @@ _tme_pcf_send_start(struct tme_pcf *pcf)
   if (conn_i2c != NULL) {
 
     tme_mutex_unlock(&pcf->tme_pcf_mutex);
-    rc = (*conn_i2c->tme_i2c_connection_write)(conn_i2c, addr);
+    rc = (*conn_i2c->tme_i2c_connection_start)(conn_i2c, addr);
     tme_mutex_lock(&pcf->tme_pcf_mutex);
 
   } else {
@@ -176,7 +193,7 @@ _tme_pcf_send_start(struct tme_pcf *pcf)
          conn_i2c != NULL;
          conn_i2c = conn_i2c->tme_i2c_connection_next) {
       tme_mutex_unlock(&pcf->tme_pcf_mutex);
-      rc = (*conn_i2c->tme_i2c_connection_write)(conn_i2c, addr);
+      rc = (*conn_i2c->tme_i2c_connection_start)(conn_i2c, addr);
       tme_mutex_lock(&pcf->tme_pcf_mutex);
       if (rc == TME_OK) {
         pcf->tme_pcf_i2c_nexus = conn_i2c;
@@ -427,7 +444,7 @@ _tme_pcf_bus_cycle(void *_pcf,
   tme_uint8_t buffer, value;
   struct tme_bus_cycle cycle_resp;
   int new_callouts;
-  int reg;
+  int reg, pcf_reg;
 
   /* recover our data structure: */
   pcf = (struct tme_pcf *) _pcf;
@@ -448,6 +465,9 @@ _tme_pcf_bus_cycle(void *_pcf,
   /* assume we won't need any new callouts: */
   new_callouts = 0;
 
+  pcf_reg = _tme_pcf_which_reg(pcf, reg,
+    cycle_init->tme_bus_cycle_type == TME_BUS_CYCLE_READ);
+
   /* if this is a write: */
   if (cycle_init->tme_bus_cycle_type == TME_BUS_CYCLE_WRITE) {
 
@@ -465,11 +485,11 @@ _tme_pcf_bus_cycle(void *_pcf,
     value = buffer;
 
     /* log this write: */
-    tme_log(TME_PCF_LOG_HANDLE(pcf), 100000, TME_OK,
+    tme_log(TME_PCF_LOG_HANDLE(pcf), 0, TME_OK,
       (TME_PCF_LOG_HANDLE(pcf),
-       "REG %d <- 0x%02x", reg, value));
+       "[%s] <- 0x%02x", _tme_pcf8584_reg_name(pcf_reg), value));
 
-    switch (_tme_pcf_which_reg(pcf, reg, 0)) {
+    switch (pcf_reg) {
 
     case PCF_REG_DATA:
       pcf->tme_pcf_data = value;
@@ -503,7 +523,7 @@ _tme_pcf_bus_cycle(void *_pcf,
   else {
     assert(cycle_init->tme_bus_cycle_type == TME_BUS_CYCLE_READ);
 
-    switch (_tme_pcf_which_reg(pcf, reg, 1)) {
+    switch (pcf_reg) {
 
     case PCF_REG_DATA:
       value = pcf->tme_pcf_data;
@@ -537,13 +557,13 @@ _tme_pcf_bus_cycle(void *_pcf,
 
 #ifndef TME_NO_LOG
     /* log this read: */
-    if (pcf->tme_pcf_last_read_reg != reg
+    if (pcf->tme_pcf_last_read_reg != pcf_reg
         || pcf->tme_pcf_last_read_value != value) {
-      pcf->tme_pcf_last_read_reg = reg;
+      pcf->tme_pcf_last_read_reg = pcf_reg;
       pcf->tme_pcf_last_read_value = value;
-      tme_log(TME_PCF_LOG_HANDLE(pcf), 100000, TME_OK,
+      tme_log(TME_PCF_LOG_HANDLE(pcf), 0, TME_OK,
         (TME_PCF_LOG_HANDLE(pcf),
-         "REG %d -> 0x%02x", reg, value));
+         "[%s] -> 0x%02x", _tme_pcf8584_reg_name(pcf_reg), value));
     }
 #endif /* !TME_NO_LOG */
 
