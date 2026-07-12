@@ -231,6 +231,7 @@ tme_uint32_t _tme_ph1_mmu_pme_get _TME_P((struct tme_ph1 *, tme_uint32_t));
 void  _tme_ph1_mmu_pme_set _TME_P((struct tme_ph1 *, tme_uint32_t,
                                    tme_uint32_t));
 
+void  _tme_ph1_mmu_toggle _TME_P((struct tme_ph1 *));
 void  _tme_ph1_mmu_context_set _TME_P((struct tme_ph1 *));
 
 int   _tme_ph1_control_cycle_handler _TME_P((void *,

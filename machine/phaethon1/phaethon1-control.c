@@ -274,7 +274,7 @@ _tme_ph1_control_cycle_handler(void *_ph1,
 
       /* If the MMU enable bit changed, force-reload the context. */
       if ((ph1->tme_ph1_sysen ^ old_sysen_value) & TME_PH1_SYSEN_MMU) {
-        _tme_ph1_mmu_context_set(ph1);
+        _tme_ph1_mmu_toggle(ph1);
       }
     }
 

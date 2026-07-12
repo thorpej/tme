@@ -577,29 +577,41 @@ _tme_ph1_mmu_pme_set(struct tme_ph1 *ph1,
                                 pme));
 }
 
+/* this is called when the mmu-enabled state changes: */
+void
+_tme_ph1_mmu_toggle(struct tme_ph1 *ph1)
+{
+  /* invalidate all TLB sets for the MMU. */
+  tme_pg68k_mmu_tlbs_invalidate(ph1->tme_ph1_mmu);
+
+  /* force a context reload. */
+  _tme_ph1_mmu_context_set(ph1);
+}
+
 /* this is called when the context register is set: */
 void
 _tme_ph1_mmu_context_set(struct tme_ph1 *ph1)
 {
   tme_uint8_t context;
+  const int mmu_en = (ph1->tme_ph1_sysen & TME_PH1_SYSEN_MMU);
 
   /* N.B. even though user and supervisor reference use two different
      contexts, we ensure that TLB entries for one are never usable by
      the other.  */
 
-  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
-          (TME_PH1_LOG_HANDLE(ph1),
-           _("context now #%d"),
-           ph1->tme_ph1_context));
-
   /* when the MMU is disabled, all regular bus cycles go to the firmware
      ROM, so we have a fake context that is used used when that is the case. */
-  if (__tme_predict_false((ph1->tme_ph1_sysen & TME_PH1_SYSEN_MMU) == 0)) {
+  if (__tme_predict_false(! mmu_en)) {
     context = TME_PH1_NUM_CONTEXTS;
   }
   else {
     context = ph1->tme_ph1_context;
   }
+
+  tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+          (TME_PH1_LOG_HANDLE(ph1),
+           _("context now #%d mmu_en=%d [-> #%d]"),
+           ph1->tme_ph1_context, mmu_en, context));
 
   /* update the m68k bus context register: */
   *ph1->tme_ph1_m68k_bus_context = context;
