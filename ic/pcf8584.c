@@ -118,6 +118,8 @@ struct tme_pcf {
 
   /* our registers */
   tme_uint8_t tme_pcf_registers[PCF_NREGS];
+  tme_uint8_t tme_pcf_own_address_needs_init;
+  tme_uint8_t tme_pcf_clock_needs_init;
 
   int tme_pcf_mode;
   int tme_pcf_repeated_start;
@@ -184,6 +186,35 @@ _tme_pcf_which_reg(struct tme_pcf *pcf, int a0, int is_read)
   default:
     return PCF_REG_NONE;
   }
+}
+
+static void
+_tme_pcf_reset_stat(struct tme_pcf *pcf)
+{
+  pcf->tme_pcf_registers[PCF_REG_STAT] =
+    PCF8584_STATUS_PIN | PCF8584_STATUS_BBN |
+    pcf->tme_pcf_own_address_needs_init |
+    pcf->tme_pcf_clock_needs_init;
+}
+
+static int
+_tme_pcf_reset(struct tme_pcf *pcf)
+{
+  /* Reset all registers. */
+  memset(pcf->tme_pcf_registers, 0, sizeof(pcf->tme_pcf_registers));
+
+  /* Initialization required. */
+  pcf->tme_pcf_own_address_needs_init
+    = pcf->tme_pcf_clock_needs_init
+    = PCF8584_STATUS_INI;
+
+  pcf->tme_pcf_mode = PCF_MODE_SLV_REC;
+  pcf->tme_pcf_repeated_start = 0;
+
+  _tme_pcf_reset_stat(pcf);
+
+  /* assume that the interrupt signal has changed: */
+  return (TME_PCF_CALLOUT_INT);
 }
 
 static void
@@ -336,8 +367,7 @@ _tme_pcf_callout(struct tme_pcf *pcf,
 
       /* setting PIN resets all status bits. */
       if (ctrl & PCF8584_CTRL_PIN) {
-        pcf->tme_pcf_registers[PCF_REG_STAT]
-          = PCF8584_STATUS_PIN | PCF8584_STATUS_BBN;
+	_tme_pcf_reset_stat(pcf);
         pcf->tme_pcf_registers[PCF_REG_CTRL] &= ~PCF8584_CTRL_PIN;
       }
 
@@ -611,7 +641,33 @@ static int
 _tme_pcf_signal(void *_pcf,
                 unsigned int signal)
 {
-  /* XXX */
+  struct tme_pcf *pcf = _pcf;
+  int new_callouts = 0;
+  unsigned int level;
+
+  tme_mutex_lock(&pcf->tme_pcf_mutex);
+
+  /* take out the signal level: */
+  level = signal & TME_BUS_SIGNAL_LEVEL_MASK;
+  signal = TME_BUS_SIGNAL_WHICH(signal);
+
+  /* dispatch on the generic bus signals: */
+  switch (signal) {
+
+  case TME_BUS_SIGNAL_RESET:
+    if (level == TME_BUS_SIGNAL_LEVEL_ASSERTED) {
+      new_callouts |= _tme_pcf_reset(pcf);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  /* make any new callouts: */
+  _tme_pcf_callout(pcf, new_callouts);
+
+  tme_mutex_unlock(&pcf->tme_pcf_mutex);
 
   /* no faults: */
   return (TME_OK);
@@ -779,6 +835,9 @@ TME_ELEMENT_NEW_DECL(tme_ic_pcf8584) {
   /* fill the element: */
   element->tme_element_private = pcf;
   element->tme_element_connections_new = _tme_pcf_connections_new;
+
+  /* implicit reset: */
+  (void) _tme_pcf_reset(pcf);
 
   return (TME_OK);
 }
