@@ -25,7 +25,8 @@ EXTRA_LTLIBRARIES = tme_ic_am9513.la \
 	tme_ic_am7930.la \
 	tme_ic_am7990.la \
 	tme_ic_lsi64854.la \
-	tme_ic_mm58167.la
+	tme_ic_mm58167.la \
+	tme_ic_dsrtc.la
 
 tme_ic_am9513_la_SOURCES = am9513.c
 tme_ic_am9513_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
@@ -110,6 +111,11 @@ tme_ic_am7990_la_LIBADD = $(top_builddir)/libtme/libtme.la \
 tme_ic_lsi64854_la_SOURCES = lsi64854.c
 tme_ic_lsi64854_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
 tme_ic_lsi64854_la_LIBADD = $(top_builddir)/libtme/libtme.la \
+	$(top_builddir)/generic/libtme-generic.la
+
+tme_ic_dsrtc_la_SOURCES = dsrtc.c
+tme_ic_dsrtc_la_LDFLAGS = -rpath $(pkglibdir) -module -version-info 0:0:0
+tme_ic_dsrtc_la_LIBADD = $(top_builddir)/libtme/libtme.la \
 	$(top_builddir)/generic/libtme-generic.la
 
 include $(top_srcdir)/modules
