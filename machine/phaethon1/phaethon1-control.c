@@ -69,6 +69,13 @@
 #define DD7SEG_CHR_D    (DD7SEG_A+DD7SEG_F)
 #define DD7SEG_CHR_E    (DD7SEG_B+DD7SEG_C)
 #define DD7SEG_CHR_F    (DD7SEG_B+DD7SEG_C+DD7SEG_D)
+#define DD7SEG_CHR_H    (DD7SEG_A+DD7SEG_D)
+#define DD7SEG_CHR_J    (DD7SEG_A+DD7SEG_F+DD7SEG_G)
+#define DD7SEG_CHR_L    (DD7SEG_A+DD7SEG_B+DD7SEG_C+DD7SEG_G)
+#define DD7SEG_CHR_O    (DD7SEG_A+DD7SEG_B+DD7SEG_F)
+#define DD7SEG_CHR_P    (DD7SEG_C+DD7SEG_D)
+#define DD7SEG_CHR_U    (DD7SEG_A+DD7SEG_G)
+#define DD7SEG_CHR_u    (DD7SEG_A+DD7SEG_B+DD7SEG_F+DD7SEG_G)
 #define DD7SEG_CHR_SPACE 0xf
 
 static int
@@ -91,6 +98,13 @@ _tme_ph1_dd7seg_chr(tme_uint8_t val)
   case DD7SEG_CHR_D:     return 'd';
   case DD7SEG_CHR_E:     return 'E';
   case DD7SEG_CHR_F:     return 'F';
+  case DD7SEG_CHR_H:     return 'H';
+  case DD7SEG_CHR_J:     return 'J';
+  case DD7SEG_CHR_L:     return 'L';
+  case DD7SEG_CHR_O:     return 'o';
+  case DD7SEG_CHR_P:     return 'P';
+  case DD7SEG_CHR_U:     return 'U';
+  case DD7SEG_CHR_u:     return 'u';
   case DD7SEG_CHR_SPACE: return ' ';
   default:               return -1;
   }
@@ -107,7 +121,7 @@ _tme_ph1_dd7seg_update_display(struct tme_ph1 *ph1)
 	    (TME_PH1_LOG_HANDLE(ph1),
              _("DD7SEG: |%c%c|"), upper, lower));
   } else {
-    tme_log(TME_PH1_LOG_HANDLE(ph1), 1000, TME_OK,
+    tme_log(TME_PH1_LOG_HANDLE(ph1), 0, TME_OK,
 	    (TME_PH1_LOG_HANDLE(ph1),
 	     _("DD7SEG: u=0x%02x l=0x%02x"),
              ph1->tme_ph1_dd7seg_u,
