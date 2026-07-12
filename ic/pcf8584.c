@@ -53,6 +53,24 @@
 #define PCF_REG_IVEC        5   /* S3 */
 #define PCF_NREGS           6
 
+static const int _tme_pcf_reg_write_callouts[PCF_NREGS] = {
+  TME_PCF_CALLOUT_DOUT,
+  0,
+  TME_PCF_CALLOUT_CTRL,
+  0,
+  0,
+  0,
+};
+
+static const int _tme_pcf_reg_read_callouts[PCF_NREGS] = {
+  TME_PCF_CALLOUT_DIN,
+  0,
+  0,
+  0,
+  0,
+  0,
+};
+
 static const char * const _tme_pcf8584_reg_names[PCF_NREGS] = {
   "DATA",
   "OWN-ADDR",
@@ -99,12 +117,7 @@ struct tme_pcf {
   tme_mutex_t tme_pcf_mutex;
 
   /* our registers */
-  uint8_t tme_pcf_data;
-  uint8_t tme_pcf_own_address;
-  uint8_t tme_pcf_ctrl;
-  uint8_t tme_pcf_stat;
-  uint8_t tme_pcf_clock;
-  uint8_t tme_pcf_ivec;
+  tme_uint8_t tme_pcf_registers[PCF_NREGS];
 
   int tme_pcf_mode;
   int tme_pcf_repeated_start;
@@ -139,15 +152,16 @@ static const tme_bus_lane_t tme_pcf_router[TME_BUS_ROUTER_SIZE(TME_BUS8_LOG2)] =
 static int
 _tme_pcf_which_reg(struct tme_pcf *pcf, int a0, int is_read)
 {
+  const tme_uint8_t ctrl = pcf->tme_pcf_registers[PCF_REG_CTRL];
+
   if (a0 & 1) {
-    if ((pcf->tme_pcf_ctrl & PCF8584_CTRL_ESO) != 0 && is_read) {
+    if ((ctrl & PCF8584_CTRL_ESO) != 0 && is_read) {
       return PCF_REG_STAT;
     }
     return PCF_REG_CTRL;
   }
 
-  switch (pcf->tme_pcf_ctrl &
-          (PCF8584_CTRL_ESO|PCF8584_CTRL_ES1|PCF8584_CTRL_ES2)) {
+  switch (ctrl & (PCF8584_CTRL_ESO|PCF8584_CTRL_ES1|PCF8584_CTRL_ES2)) {
   case 0:
     return PCF_REG_OWN_ADDR;
 
@@ -176,7 +190,7 @@ static void
 _tme_pcf_send_start(struct tme_pcf *pcf)
 {
   struct tme_i2c_connection *conn_i2c = pcf->tme_pcf_i2c_nexus;
-  uint8_t addr = pcf->tme_pcf_data;
+  const tme_uint8_t addr = pcf->tme_pcf_registers[PCF_REG_DATA];
   int rc = ESRCH;
 
   /* if we already have a nexus established, we send only to that one. */
@@ -204,11 +218,11 @@ _tme_pcf_send_start(struct tme_pcf *pcf)
 
   if (rc != TME_OK) {
     /* NACK */
-    pcf->tme_pcf_stat |= PCF8584_STATUS_LRB;
+    pcf->tme_pcf_registers[PCF_REG_STAT] |= PCF8584_STATUS_LRB;
   } else {
     pcf->tme_pcf_mode = (addr & 1) ? PCF_MODE_MST_REC : PCF_MODE_MST_TRM;
   }
-  pcf->tme_pcf_stat &= ~PCF8584_STATUS_PIN;
+  pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_PIN;
 }
 
 static void
@@ -226,14 +240,14 @@ _tme_pcf_send_stop(struct tme_pcf *pcf)
 
   pcf->tme_pcf_i2c_nexus = NULL;
   pcf->tme_pcf_mode = PCF_MODE_SLV_REC;
-  pcf->tme_pcf_stat |= PCF8584_STATUS_PIN;
+  pcf->tme_pcf_registers[PCF_REG_STAT] |= PCF8584_STATUS_PIN;
 }
 
 static void
 _tme_pcf_data_out(struct tme_pcf *pcf)
 {
   struct tme_i2c_connection *conn_i2c = pcf->tme_pcf_i2c_nexus;
-  uint8_t data = pcf->tme_pcf_data;
+  const tme_uint8_t data = pcf->tme_pcf_registers[PCF_REG_DATA];
   int rc;
 
   tme_mutex_unlock(&pcf->tme_pcf_mutex);
@@ -245,20 +259,21 @@ _tme_pcf_data_out(struct tme_pcf *pcf)
   tme_mutex_lock(&pcf->tme_pcf_mutex);
 
   if (rc == TME_OK) {
-    pcf->tme_pcf_stat &= ~PCF8584_STATUS_LRB;
+    pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_LRB;
   } else {
-    pcf->tme_pcf_stat |= PCF8584_STATUS_LRB;
+    pcf->tme_pcf_registers[PCF_REG_STAT] |= PCF8584_STATUS_LRB;
   }
-  pcf->tme_pcf_stat &= ~PCF8584_STATUS_PIN;
+  pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_PIN;
 }
 
 static void
 _tme_pcf_data_in(struct tme_pcf *pcf)
 {
   struct tme_i2c_connection *conn_i2c = pcf->tme_pcf_i2c_nexus;
-  uint8_t data;
+  tme_uint8_t data;
   int rc;
-  int nack = (pcf->tme_pcf_ctrl & PCF8584_CTRL_ACK) == 0;
+  const int nack
+    = (pcf->tme_pcf_registers[PCF_REG_CTRL] & PCF8584_CTRL_ACK) == 0;
 
   tme_mutex_unlock(&pcf->tme_pcf_mutex);
 
@@ -269,13 +284,13 @@ _tme_pcf_data_in(struct tme_pcf *pcf)
   tme_mutex_lock(&pcf->tme_pcf_mutex);
 
   if (rc == TME_OK) {
-    pcf->tme_pcf_stat &= ~PCF8584_STATUS_LRB;
-    pcf->tme_pcf_data = data;
+    pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_LRB;
+    pcf->tme_pcf_registers[PCF_REG_DATA] = data;
   } else {
-    pcf->tme_pcf_stat |= PCF8584_STATUS_LRB;
-    pcf->tme_pcf_data = 0xff;  /* all pulled high */
+    pcf->tme_pcf_registers[PCF_REG_STAT] |= PCF8584_STATUS_LRB;
+    pcf->tme_pcf_registers[PCF_REG_DATA] = 0xff;  /* all pulled high */
   }
-  pcf->tme_pcf_stat &= ~PCF8584_STATUS_PIN;
+  pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_PIN;
 }
 
 /* the pcf8584 callout function.  it must be called with the mutex locked: */
@@ -317,10 +332,13 @@ _tme_pcf_callout(struct tme_pcf *pcf,
 
     if (callouts & TME_PCF_CALLOUT_CTRL) {
 
+      const tme_uint8_t ctrl = pcf->tme_pcf_registers[PCF_REG_CTRL];
+
       /* setting PIN resets all status bits. */
-      if (pcf->tme_pcf_ctrl & PCF8584_CTRL_PIN) {
-        pcf->tme_pcf_stat = PCF8584_STATUS_PIN | PCF8584_STATUS_BBN;
-        pcf->tme_pcf_ctrl &= ~PCF8584_CTRL_PIN;
+      if (ctrl & PCF8584_CTRL_PIN) {
+        pcf->tme_pcf_registers[PCF_REG_STAT]
+          = PCF8584_STATUS_PIN | PCF8584_STATUS_BBN;
+        pcf->tme_pcf_registers[PCF_REG_CTRL] &= ~PCF8584_CTRL_PIN;
       }
 
       /*
@@ -330,8 +348,7 @@ _tme_pcf_callout(struct tme_pcf *pcf,
        */
       switch (pcf->tme_pcf_mode) {
       case PCF_MODE_SLV_REC:
-        if ((pcf->tme_pcf_ctrl & (PCF8584_CTRL_STA|PCF8584_CTRL_STO))
-            == PCF8584_CTRL_STA) {
+        if ((ctrl & (PCF8584_CTRL_STA|PCF8584_CTRL_STO)) == PCF8584_CTRL_STA) {
           /* Data register has slave address + rw bit.  Go find
              a nexus.  */
           _tme_pcf_send_start(pcf);
@@ -340,14 +357,14 @@ _tme_pcf_callout(struct tme_pcf *pcf,
 
       case PCF_MODE_MST_TRM:
       case PCF_MODE_MST_REC:
-        switch (pcf->tme_pcf_ctrl & (PCF8584_CTRL_STA|PCF8584_CTRL_STO)) {
+        switch (ctrl & (PCF8584_CTRL_STA|PCF8584_CTRL_STO)) {
         case PCF8584_CTRL_STA:
           /* This is a repeated start condition if we're a MST_TRM.  We
               have to wait for the slave address and R/W bit to be written
               to the data register. */
           if (PCF_MODE_TRM_P(pcf)) {
             pcf->tme_pcf_repeated_start = 1;
-            pcf->tme_pcf_stat &= ~PCF8584_STATUS_PIN;
+            pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_PIN;
           }
           break;
 
@@ -382,18 +399,19 @@ _tme_pcf_callout(struct tme_pcf *pcf,
       } else {
         _tme_pcf_data_out(pcf);
       }
-      pcf->tme_pcf_stat &= ~PCF8584_STATUS_PIN;
+      pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_PIN;
     }
 
     if (callouts & TME_PCF_CALLOUT_DIN) {
       _tme_pcf_data_in(pcf);
-      pcf->tme_pcf_stat &= ~PCF8584_STATUS_PIN;
+      pcf->tme_pcf_registers[PCF_REG_STAT] &= ~PCF8584_STATUS_PIN;
     }
   }
 
   /* All callouts require processing interrupts. */
-  int_asserted = (pcf->tme_pcf_stat & PCF8584_STATUS_PIN) == 0
-    && (pcf->tme_pcf_ctrl & PCF8584_CTRL_ENI) != 0;
+  int_asserted
+    = (pcf->tme_pcf_registers[PCF_REG_STAT] & PCF8584_STATUS_PIN) == 0
+    && (pcf->tme_pcf_registers[PCF_REG_CTRL] & PCF8584_CTRL_ENI) != 0;
 
   if (int_asserted != pcf->tme_pcf_int_asserted) {
 
@@ -490,31 +508,14 @@ _tme_pcf_bus_cycle(void *_pcf,
        "[%s] <- 0x%02x", _tme_pcf8584_reg_name(pcf_reg), value));
 
     switch (pcf_reg) {
-
-    case PCF_REG_DATA:
-      pcf->tme_pcf_data = value;
-      new_callouts |= TME_PCF_CALLOUT_DOUT;
-      break;
-
-    case PCF_REG_OWN_ADDR:
-      pcf->tme_pcf_own_address = value;
-      break;
-
-    case PCF_REG_CTRL:
-      pcf->tme_pcf_ctrl = value;
-      new_callouts |= TME_PCF_CALLOUT_CTRL;
-      break;
-
-    case PCF_REG_CLOCK:
-      pcf->tme_pcf_clock = value;
-      break;
-
-    case PCF_REG_IVEC:
-      pcf->tme_pcf_ivec = value;
+    case PCF_REG_STAT:
+    case PCF_REG_NONE:
+      /* ignore cycle */
       break;
 
     default:
-      /* ignore cycle */
+      pcf->tme_pcf_registers[pcf_reg] = value;
+      new_callouts |= _tme_pcf_reg_write_callouts[pcf_reg];
       break;
     }
   }
@@ -524,35 +525,15 @@ _tme_pcf_bus_cycle(void *_pcf,
     assert(cycle_init->tme_bus_cycle_type == TME_BUS_CYCLE_READ);
 
     switch (pcf_reg) {
-
-    case PCF_REG_DATA:
-      value = pcf->tme_pcf_data;
-      new_callouts |= TME_PCF_CALLOUT_DIN;
-      break;
-
-    case PCF_REG_OWN_ADDR:
-      value = pcf->tme_pcf_own_address;
-      break;
-
-    case PCF_REG_CTRL:
-      value = pcf->tme_pcf_ctrl;
-      break;
-
-    case PCF_REG_STAT:
-      value = pcf->tme_pcf_stat;
-      break;
-
-    case PCF_REG_CLOCK:
-      value = pcf->tme_pcf_clock;
-      break;
-
-    case PCF_REG_IVEC:
-      value = pcf->tme_pcf_ivec;
+    case PCF_REG_NONE:
+      /* junk cycle */
+      value = 0xff;
       break;
 
     default:
-      /* junk cycle */
-      value = 0xff;
+      value = pcf->tme_pcf_registers[pcf_reg];
+      new_callouts |= _tme_pcf_reg_read_callouts[pcf_reg];
+      break;
     }
 
 #ifndef TME_NO_LOG
