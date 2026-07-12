@@ -1,4 +1,10 @@
-/* ic/dsrtc.c - implementation of Dallas / Maxim RTC emulation: */
+/* ic/dsrtc.c - implementation of Dallas / Maxim RTC emulation:
+
+   N.B. this emulation is extremely basic; we only do the real-time
+   clock (data sourced from host), and none of the alarms, interrupts,
+   etc.
+
+   NVRAM preservation to be added in the future.  */
 
 /*  
  * Copyright (c) 2026 Jason R. Thorpe
@@ -22,7 +28,70 @@
 #define DSRTC_DATE      0x04
 #define DSRTC_MONTH     0x05
 #define DSRTC_YEAR      0x06
+
+#define DSRTC_START     0
 #define DSRTC_SIZE      7
+
+#define DSRTC_CTRL      0x0e
+#define DSRTC_STAT      0x0f
+#define DSRTC_AO        0x10
+#define DSRTC_TMP_MSB   0x11
+#define DSRTC_TMP_LSB   0x12
+
+#define DSRTC_CSR_START    DSRTC_CTRL
+#define DSRTC_CSR3231_SIZE 5
+#define DSRTC_CSR3232_SIZE 6
+
+#define DS1307_CTRL     7
+#define DS1307_CTRL_MASK (TME_BIT(0) | TME_BIT(1) | TME_BIT(4) | TME_BIT(7))
+#define DS1307_CTRL_DFLT (TME_BIT(0) | TME_BIT(1))
+
+#define DS1307_NVRAM_START 0x08
+#define DS3231_NVRAM_START 0x14
+
+static const tme_uint8_t _tme_dsrtc_rtc_masks[] = {
+/* seconds */  0x7f,
+/* minutes */  0x7f,
+/* hours   */  0x7f,
+/* day     */  0x07,
+/* date    */  0x3f,
+/* month   */  0x1f | 0x80, /* plus century bit */
+/* year    */  0xff,
+};
+
+static const tme_uint8_t _tme_ds3231_csr_defaults[] = {
+/* ctrl    */  TME_BIT(2) | TME_BIT(3) | TME_BIT(4),
+/* stat    */  TME_BIT(3),
+/* ao      */  0x00,
+/* tmp_msb */  0x00,
+/* tmp_lsb */  0x00,
+};
+
+static const tme_uint8_t _tme_ds3231_csr_masks[] = {
+/* ctrl    */  0xff,
+/* stat    */  TME_BIT(3) | TME_BIT(7),
+/* ao      */  0x00,
+/* tmp_msb */  0x00,
+/* tmp_lsb */  0x00,
+};
+
+static const tme_uint8_t _tme_ds3232_csr_defaults[] = {
+/* ctrl    */  TME_BIT(2) | TME_BIT(3) | TME_BIT(4),
+/* stat    */  TME_BIT(3) | TME_BIT(6),
+/* ao      */  0x00,
+/* tmp_msb */  0x00,
+/* tmp_lsb */  0x00,
+/* test    */  0x00,
+};
+
+static const tme_uint8_t _tme_ds3232_csr_masks[] = {
+/* ctrl    */  0xff,
+/* stat    */  TME_BIT(3) | TME_BIT(6) | TME_BIT(7),
+/* ao      */  0x00,
+/* tmp_msb */  0x00,
+/* tmp_lsb */  0x00,
+/* test    */  0x80,
+};
 
 #define DSRTC_TYPE_DS1307     0
 #define DSRTC_TYPE_DS3231     1
@@ -71,7 +140,68 @@ static inline tme_uint8_t
 _tme_dsrtc_bcd_out(unsigned int value)
 {
   return ((value % 10)
-	  + ((value / 10) * 16));
+    + ((value / 10) * 16));
+}
+
+static tme_uint8_t
+_tme_dsrtc_masked_data_value(struct tme_dsrtc *dsrtc, tme_uint8_t val)
+{
+  if (dsrtc->tme_dsrtc_cursor >= DSRTC_START &&
+      dsrtc->tme_dsrtc_cursor < DSRTC_START + DSRTC_SIZE) {
+    return val & _tme_dsrtc_rtc_masks[dsrtc->tme_dsrtc_cursor
+                                      - DSRTC_START];
+  }
+
+  if (dsrtc->tme_dsrtc_type == DSRTC_TYPE_DS3231) {
+    if (dsrtc->tme_dsrtc_cursor >= DSRTC_CSR_START &&
+        dsrtc->tme_dsrtc_cursor < DSRTC_CSR_START + DSRTC_CSR3231_SIZE) {
+      return val & _tme_ds3231_csr_masks[dsrtc->tme_dsrtc_cursor
+                                         - DSRTC_CSR_START];
+    }
+  }
+
+  if (dsrtc->tme_dsrtc_type == DSRTC_TYPE_DS3232) {
+    if (dsrtc->tme_dsrtc_cursor >= DSRTC_CSR_START &&
+        dsrtc->tme_dsrtc_cursor < DSRTC_CSR_START + DSRTC_CSR3232_SIZE) {
+      return val & _tme_ds3232_csr_masks[dsrtc->tme_dsrtc_cursor
+                                         - DSRTC_CSR_START];
+    }
+  }
+
+  if (dsrtc->tme_dsrtc_type == DSRTC_TYPE_DS1307) {
+    if (dsrtc->tme_dsrtc_cursor == DS1307_CTRL) {
+      return val & DS1307_CTRL_MASK;
+    }
+  }
+
+  return val;
+}
+
+static void
+_tme_dsrtc_init_registers(struct tme_dsrtc *dsrtc)
+{
+  int i;
+
+  memset(dsrtc->tme_dsrtc_nvram, 0, sizeof(dsrtc->tme_dsrtc_nvram));
+
+  if (dsrtc->tme_dsrtc_type == DSRTC_TYPE_DS1307) {
+    dsrtc->tme_dsrtc_nvram[DS1307_CTRL] = DS1307_CTRL_DFLT;
+    return;
+  }
+
+  if (dsrtc->tme_dsrtc_type == DSRTC_TYPE_DS3231) {
+    for (i = 0; i < DSRTC_CSR3231_SIZE; i++) {
+      dsrtc->tme_dsrtc_nvram[DSRTC_CSR_START + i] = _tme_ds3231_csr_defaults[i];
+    }
+    return;
+  }
+
+  if (dsrtc->tme_dsrtc_type == DSRTC_TYPE_DS3232) {
+    for (i = 0; i < DSRTC_CSR3232_SIZE; i++) {
+      dsrtc->tme_dsrtc_nvram[DSRTC_CSR_START + i] = _tme_ds3232_csr_defaults[i];
+    }
+    return;
+  }
 }
 
 static void
@@ -124,7 +254,8 @@ _tme_dsrtc_set_cursor(struct tme_dsrtc *dsrtc, tme_uint8_t val)
 static void
 _tme_dsrtc_write(struct tme_dsrtc *dsrtc, tme_uint8_t val)
 {
-  dsrtc->tme_dsrtc_nvram[dsrtc->tme_dsrtc_cursor] = val;
+  dsrtc->tme_dsrtc_nvram[dsrtc->tme_dsrtc_cursor]
+      = _tme_dsrtc_masked_data_value(dsrtc, val);
 }
 
 static tme_uint8_t
@@ -378,6 +509,8 @@ TME_ELEMENT_NEW_DECL(tme_ic_dsrtc) {
   tme_mutex_init(&dsrtc->tme_dsrtc_mutex);
 
   dsrtc->tme_dsrtc_epoch_year = epoch;
+
+  _tme_dsrtc_init_registers(dsrtc);
 
   /* fill the element: */
   element->tme_element_private = dsrtc;
