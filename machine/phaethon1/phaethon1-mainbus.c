@@ -184,6 +184,7 @@ _tme_ph1_command(struct tme_element *element,
 {
   struct tme_ph1 *ph1;
   int do_reset;
+  tme_uint16_t sw_bit = 0;
 
   /* recover our ph1: */
   ph1 = (struct tme_ph1 *) element->tme_element_private;
@@ -214,6 +215,42 @@ _tme_ph1_command(struct tme_element *element,
     }
   }
 
+  else if (TME_ARG_IS(args[1], "switch")) {
+
+    if (args[2] == NULL) {
+
+ switch_usage:
+      tme_output_append_error(_output,
+                              "%s %s [1 ... 16] [ on | off ]",
+                              _("usage:"),
+                              args[0]);
+      return (EINVAL);
+    } else {
+
+      char *cp;
+      unsigned long val;
+      val = strtoul(args[2], &cp, 10);
+      if (val < 1 || val > 16 || *cp != '\0') {
+        goto switch_usage;
+      }
+      sw_bit = 1 << (val - 1);
+    }
+
+    if (TME_ARG_IS(args[3], "on")
+        && args[4] == NULL) {
+      ph1->tme_ph1_cfgsw_value |= sw_bit;
+    }
+
+    else if (TME_ARG_IS(args[3], "off")
+              && args[4] == NULL) {
+      ph1->tme_ph1_cfgsw_value &= ~sw_bit;
+    }
+
+    else {
+      goto switch_usage;
+    }
+  }
+
   /* any other command: */
   else {
     if (args[1] != NULL) {
@@ -223,9 +260,10 @@ _tme_ph1_command(struct tme_element *element,
                                args[1]);
     }
     tme_output_append_error(_output,
-                            _("available %s commands: %s"),
+                            _("available %s commands: %s %s"),
                             args[0],
-                            "power");
+                            "power",
+                            "switch");
     return (EINVAL);
   }
 
