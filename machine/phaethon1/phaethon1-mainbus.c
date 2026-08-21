@@ -221,7 +221,7 @@ _tme_ph1_command(struct tme_element *element,
 
  switch_usage:
       tme_output_append_error(_output,
-                              "%s %s [1 ... 16] [ on | off ]",
+                              "%s %s [0 ... 15] [ on | off ]",
                               _("usage:"),
                               args[0]);
       return (EINVAL);
@@ -230,10 +230,10 @@ _tme_ph1_command(struct tme_element *element,
       char *cp;
       unsigned long val;
       val = strtoul(args[2], &cp, 10);
-      if (val < 1 || val > 16 || *cp != '\0') {
+      if (val > 15 || *cp != '\0') {
         goto switch_usage;
       }
-      sw_bit = 1 << (val - 1);
+      sw_bit = 1 << val;
     }
 
     if (TME_ARG_IS(args[3], "on")
